@@ -15,9 +15,10 @@ export function TopicSection({ topic, articles }: TopicSectionProps) {
   const config = TOPIC_CONFIG[topic];
 
   return (
-    <section className="mb-12">
+    <section id={`section-${topic}`} className="mb-12 scroll-mt-24">
       <div className="mb-6 flex items-center gap-3">
         <div className={`h-6 w-1 rounded-full ${config.bgClass}`} />
+        <span className="text-xl">{config.emoji}</span>
         <h2 className="font-display text-2xl font-bold text-foreground">
           {config.label}
         </h2>

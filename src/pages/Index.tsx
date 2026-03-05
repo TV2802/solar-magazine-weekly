@@ -1,6 +1,8 @@
 import { HeroBanner } from "@/components/HeroBanner";
 import { TopicSection } from "@/components/TopicSection";
 import { ArticleCard } from "@/components/ArticleCard";
+import { DigestCard } from "@/components/DigestCard";
+import { SectionNav } from "@/components/SectionNav";
 import { useLatestIssue, useIssueArticles } from "@/hooks/useArticles";
 import { ALL_TOPICS } from "@/lib/topics";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,10 +20,12 @@ const Index = () => {
   return (
     <>
       <HeroBanner issue={issue ?? null} />
+      <SectionNav />
 
       <main className="container mx-auto px-4 py-10">
         {isLoading ? (
           <div className="space-y-6">
+            <Skeleton className="h-32 w-full rounded-lg" />
             <Skeleton className="h-64 w-full rounded-lg" />
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3].map((i) => (
@@ -37,18 +41,26 @@ const Index = () => {
             </h2>
             <p className="max-w-md text-muted-foreground">
               The first weekly issue is being curated. Check back soon for the
-              latest energy &amp; sustainability news.
+              latest DER &amp; multifamily energy news.
             </p>
           </div>
         ) : (
           <>
+            {/* Weekly Digest */}
+            <DigestCard
+              issueId={issue?.id}
+              digestText={(issue as any)?.digest_text ?? null}
+            />
+
+            {/* Featured Article */}
             {featured && (
               <div className="mb-12">
                 <ArticleCard article={featured} featured />
               </div>
             )}
 
-            {ALL_TOPICS.map((topic) => (
+            {/* 9 Topic Sections (excluding weekly_digest which is the digest card) */}
+            {ALL_TOPICS.filter((t) => t !== "weekly_digest").map((topic) => (
               <TopicSection
                 key={topic}
                 topic={topic}

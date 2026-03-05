@@ -9,16 +9,16 @@ export function SiteFooter() {
           <div>
             <div className="mb-2 flex items-center gap-2">
               <Zap className="h-5 w-5 text-primary" />
-              <span className="font-display text-lg font-bold">Energy Pulse</span>
+              <span className="font-display text-lg font-bold tracking-tight">ENERGYPULSE</span>
             </div>
             <p className="max-w-sm text-sm text-muted-foreground">
-              Your weekly curated briefing on the energy &amp; sustainability
-              landscape. Auto-aggregated from top industry sources.
+              Internal weekly briefing for DER developers, owners, and operators
+              in the multifamily housing sector. Solar PV &amp; BESS intelligence.
             </p>
           </div>
           <div>
             <h4 className="mb-3 font-display text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Topics
+              Sections
             </h4>
             <div className="flex flex-wrap gap-2">
               {ALL_TOPICS.map((t) => (
@@ -26,14 +26,14 @@ export function SiteFooter() {
                   key={t}
                   className={`rounded-sm px-2 py-0.5 text-xs font-semibold ${TOPIC_CONFIG[t].bgClass} text-primary-foreground`}
                 >
-                  {TOPIC_CONFIG[t].label}
+                  {TOPIC_CONFIG[t].emoji} {TOPIC_CONFIG[t].label}
                 </span>
               ))}
             </div>
           </div>
         </div>
         <div className="mt-8 border-t border-border pt-6 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Energy Pulse. Powered by Lovable.
+          © {new Date().getFullYear()} ENERGYPULSE. Powered by Lovable.
         </div>
       </div>
     </footer>

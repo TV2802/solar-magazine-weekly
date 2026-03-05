@@ -13,26 +13,78 @@ interface FeedSource {
 }
 
 const FEEDS: FeedSource[] = [
-  { url: "https://www.solarpowerworldonline.com/feed/", name: "Solar Power World", topics: ["solar"] },
-  { url: "https://cleantechnica.com/feed/", name: "CleanTechnica", topics: ["solar", "battery", "new_innovations"] },
-  { url: "https://www.utilitydive.com/feeds/news/", name: "Utility Dive", topics: ["built_environment", "solar", "battery"] },
-  { url: "https://electrek.co/feed/", name: "Electrek", topics: ["battery", "new_innovations"] },
-  { url: "https://www.greentechmedia.com/feed", name: "GreenTech Media", topics: ["solar", "battery", "new_innovations"] },
-  { url: "https://www.energy.gov/eere/articles.xml", name: "DOE EERE", topics: ["built_environment", "new_innovations"] },
+  { url: "https://pv-magazine-usa.com/feed/", name: "PV Magazine", topics: ["policy_incentives", "technology_equipment", "market_pricing"] },
+  { url: "https://www.solarpowerworldonline.com/feed/", name: "Solar Power World", topics: ["technology_equipment", "policy_incentives"] },
+  { url: "https://cleantechnica.com/feed/", name: "CleanTechnica", topics: ["technology_equipment", "innovation_spotlight", "bess_storage"] },
+  { url: "https://www.utilitydive.com/feeds/news/", name: "Utility Dive", topics: ["policy_incentives", "code_compliance", "market_pricing"] },
+  { url: "https://electrek.co/feed/", name: "Electrek", topics: ["bess_storage", "innovation_spotlight", "technology_equipment"] },
+  { url: "https://www.canarymedia.com/feed", name: "Canary Media", topics: ["policy_incentives", "innovation_spotlight", "bess_storage"] },
+  { url: "https://www.energy-storage.news/feed/", name: "Energy Storage News", topics: ["bess_storage", "market_pricing", "technology_equipment"] },
+  { url: "https://www.energy.gov/eere/articles.xml", name: "DOE EERE", topics: ["policy_incentives", "innovation_spotlight", "code_compliance"] },
+  { url: "https://www.multifamilyexecutive.com/rss/", name: "Multifamily Executive", topics: ["multifamily_nexus", "project_wins"] },
+  { url: "https://www.seia.org/feed", name: "SEIA", topics: ["policy_incentives", "market_pricing"] },
 ];
 
 const TOPIC_KEYWORDS: Record<string, string[]> = {
-  solar: ["solar", "photovoltaic", "pv", "sun", "panel"],
-  multifamily: ["multifamily", "apartment", "housing", "residential", "tenant", "building efficiency"],
-  battery: ["battery", "storage", "lithium", "energy storage", "ev", "electric vehicle"],
-  built_environment: ["building", "retrofit", "hvac", "insulation", "energy efficiency", "built environment", "weatherization"],
-  new_innovations: ["innovation", "breakthrough", "new technology", "hydrogen", "fusion", "startup"],
-  company_success: ["company", "growth", "revenue", "partnership", "acquisition", "funding", "ipo"],
+  policy_incentives: [
+    "ira", "inflation reduction act", "itc", "investment tax credit", "tax credit",
+    "incentive", "sgip", "ny-sun", "smart program", "srec", "policy", "subsidy",
+    "transferability", "domestic content", "low-income", "adder", "bonus",
+    "interconnection policy", "net metering", "federal", "state incentive",
+    "rebate", "grant", "funding program",
+  ],
+  technology_equipment: [
+    "module", "inverter", "microinverter", "string inverter", "hybrid inverter",
+    "panel", "solar panel", "efficiency", "cost per watt", "bifacial", "monocrystalline",
+    "perc", "topcon", "heterojunction", "smart panel", "load management",
+    "ul certification", "iec", "ev charging", "evse", "charger",
+    "optimizer", "rapid shutdown",
+  ],
+  multifamily_nexus: [
+    "multifamily", "apartment", "tenant", "landlord", "property", "real estate",
+    "noi", "net operating income", "valuation", "green lease", "vnem",
+    "virtual net metering", "mash", "affordable housing", "leed",
+    "enterprise green communities", "fitwel", "sustainability certification",
+    "property management", "hoa", "common area", "master meter",
+    "utility billing", "resident",
+  ],
+  market_pricing: [
+    "pricing", "price", "spot price", "cost per watt", "dollar per kwh",
+    "ppa", "power purchase agreement", "lease rate", "community solar",
+    "srec price", "rec market", "tou", "time of use", "tariff",
+    "rate change", "utility rate", "benchmark", "market trend",
+    "queue", "interconnection queue", "wait time",
+  ],
+  code_compliance: [
+    "title 24", "local law 97", "building code", "building performance standard",
+    "bps", "fire code", "nfpa 855", "nfpa", "ibc", "ieee 1547", "ul 9540",
+    "ul 9540a", "mandate", "compliance", "carbon penalty", "emission",
+    "building standard", "energy code", "reach code",
+  ],
+  bess_storage: [
+    "battery", "bess", "energy storage", "lithium", "lfp", "sodium-ion",
+    "demand charge", "demand response", "frequency regulation", "grid services",
+    "dispatch", "sizing", "storage incentive", "behind-the-meter",
+    "front-of-meter", "peak shaving", "load shifting", "resilience",
+    "backup power", "fire safety", "thermal runaway",
+  ],
+  innovation_spotlight: [
+    "innovation", "breakthrough", "startup", "new technology", "ai",
+    "machine learning", "software platform", "financing", "pace", "c-pace",
+    "green bond", "novel", "building-integrated", "bipv",
+    "energy management system", "ems", "digital twin",
+  ],
+  project_wins: [
+    "project", "commissioned", "milestone", "deal", "closed", "partnership",
+    "acquisition", "funding round", "ipo", "expansion", "portfolio",
+    "megawatt", "mw", "installation", "deployed", "completed",
+    "case study", "success",
+  ],
 };
 
 function categorize(title: string, summary: string, feedTopics: string[]): string {
   const text = `${title} ${summary}`.toLowerCase();
-  let bestTopic = feedTopics[0] || "new_innovations";
+  let bestTopic = feedTopics[0] || "innovation_spotlight";
   let bestScore = 0;
 
   for (const [topic, keywords] of Object.entries(TOPIC_KEYWORDS)) {
@@ -57,13 +109,10 @@ function extractText(xml: string, tag: string): string {
 }
 
 function extractImage(itemXml: string): string | null {
-  // Check media:content
   const mediaMatch = itemXml.match(/url="(https?:\/\/[^"]+\.(jpg|jpeg|png|webp)[^"]*)"/i);
   if (mediaMatch) return mediaMatch[1];
-  // Check enclosure
   const encMatch = itemXml.match(/<enclosure[^>]+url="(https?:\/\/[^"]+)"/i);
   if (encMatch) return encMatch[1];
-  // Check img in description
   const imgMatch = itemXml.match(/<img[^>]+src="(https?:\/\/[^"]+)"/i);
   if (imgMatch) return imgMatch[1];
   return null;
@@ -80,7 +129,7 @@ async function fetchFeed(feed: FeedSource): Promise<Array<{
 }>> {
   try {
     const res = await fetch(feed.url, {
-      headers: { "User-Agent": "EnergyPulse/1.0" },
+      headers: { "User-Agent": "ENERGYPULSE/1.0" },
     });
     if (!res.ok) {
       console.error(`Failed to fetch ${feed.url}: ${res.status}`);
@@ -123,7 +172,6 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Determine issue number
     const { data: lastIssue } = await supabase
       .from("issues")
       .select("issue_number")
@@ -134,11 +182,10 @@ Deno.serve(async (req) => {
     const issueNumber = (lastIssue?.issue_number ?? 0) + 1;
     const now = new Date();
     const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - now.getDay()); // Sunday
+    weekStart.setDate(now.getDate() - now.getDay());
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6);
 
-    // Create new issue
     const { data: issue, error: issueError } = await supabase
       .from("issues")
       .insert({
@@ -151,10 +198,8 @@ Deno.serve(async (req) => {
 
     if (issueError) throw issueError;
 
-    // Fetch all feeds in parallel
     const allArticles = (await Promise.all(FEEDS.map(fetchFeed))).flat();
 
-    // Dedupe by URL
     const seen = new Set<string>();
     const unique = allArticles.filter((a) => {
       if (seen.has(a.source_url)) return false;
@@ -162,9 +207,8 @@ Deno.serve(async (req) => {
       return true;
     });
 
-    // Mark the first article with an image as featured
     const featuredIdx = unique.findIndex((a) => a.image_url);
-    
+
     const toInsert = unique.map((a, i) => ({
       ...a,
       issue_id: issue.id,
@@ -176,6 +220,20 @@ Deno.serve(async (req) => {
         .from("articles")
         .insert(toInsert);
       if (insertError) throw insertError;
+    }
+
+    // Trigger digest generation
+    try {
+      await fetch(`${supabaseUrl}/functions/v1/generate-digest`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+        },
+        body: JSON.stringify({ issue_id: issue.id }),
+      });
+    } catch (digestErr) {
+      console.error("Digest generation failed:", digestErr);
     }
 
     return new Response(

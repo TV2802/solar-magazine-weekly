@@ -9,7 +9,7 @@ export function TopicBadge({ topic }: { topic: TopicCategory }) {
     <span
       className={`inline-block rounded-sm px-2 py-0.5 text-xs font-semibold uppercase tracking-wider ${config.bgClass} text-primary-foreground`}
     >
-      {config.label}
+      {config.emoji} {config.label}
     </span>
   );
 }
