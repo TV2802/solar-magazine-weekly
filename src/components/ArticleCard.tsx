@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { TopicBadge } from "./TopicBadge";
+import { FeedbackButtons } from "./FeedbackButtons";
 import { ExternalLink } from "lucide-react";
 import type { Article } from "@/hooks/useArticles";
 import { format } from "date-fns";
@@ -49,6 +50,9 @@ export function ArticleCard({ article, featured = false }: ArticleCardProps) {
               {article.summary}
             </p>
           )}
+          <div className="mt-4 flex justify-end">
+            <FeedbackButtons articleId={article.id} />
+          </div>
         </div>
       </Link>
     );
@@ -89,6 +93,9 @@ export function ArticleCard({ article, featured = false }: ArticleCardProps) {
             {article.source_name}
           </div>
         )}
+        <div className="mt-2 flex justify-end">
+          <FeedbackButtons articleId={article.id} />
+        </div>
       </div>
     </Link>
   );
