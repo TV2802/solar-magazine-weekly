@@ -9,20 +9,22 @@ export function HeroBanner({ issue }: { issue: Issue | null }) {
 
   return (
     <header className="relative overflow-hidden border-b border-border bg-foreground text-background">
-      {/* Accent strip */}
-      <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-energy-solar via-energy-battery to-energy-innovation" />
+      <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-energy-policy via-energy-bess to-energy-innovation" />
 
       <div className="container mx-auto flex flex-col items-start gap-2 px-4 py-10 md:flex-row md:items-end md:justify-between md:py-16">
         <div>
           <div className="mb-3 flex items-center gap-2">
             <Zap className="h-6 w-6 text-primary" />
             <span className="font-display text-sm font-semibold uppercase tracking-widest text-primary">
-              Energy Pulse
+              ENERGYPULSE
             </span>
           </div>
           <h1 className="font-display text-4xl font-bold leading-none md:text-6xl">
             Weekly Briefing
           </h1>
+          <p className="mt-2 max-w-lg text-sm text-muted-foreground">
+            Curated DER intelligence for multifamily solar + storage developers
+          </p>
         </div>
         <div className="text-right">
           {issue && (

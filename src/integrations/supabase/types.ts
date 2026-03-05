@@ -67,6 +67,7 @@ export type Database = {
       issues: {
         Row: {
           created_at: string
+          digest_text: string | null
           id: string
           issue_number: number
           week_end: string
@@ -74,6 +75,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          digest_text?: string | null
           id?: string
           issue_number: number
           week_end: string
@@ -81,6 +83,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          digest_text?: string | null
           id?: string
           issue_number?: number
           week_end?: string
@@ -103,6 +106,15 @@ export type Database = {
         | "built_environment"
         | "new_innovations"
         | "company_success"
+        | "policy_incentives"
+        | "technology_equipment"
+        | "multifamily_nexus"
+        | "market_pricing"
+        | "code_compliance"
+        | "bess_storage"
+        | "innovation_spotlight"
+        | "project_wins"
+        | "weekly_digest"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -237,6 +249,15 @@ export const Constants = {
         "built_environment",
         "new_innovations",
         "company_success",
+        "policy_incentives",
+        "technology_equipment",
+        "multifamily_nexus",
+        "market_pricing",
+        "code_compliance",
+        "bess_storage",
+        "innovation_spotlight",
+        "project_wins",
+        "weekly_digest",
       ],
     },
   },

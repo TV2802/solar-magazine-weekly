@@ -14,7 +14,7 @@ export function SiteNav() {
       <div className="container mx-auto flex h-14 items-center justify-between px-4">
         <Link to="/" className="flex items-center gap-2">
           <Zap className="h-5 w-5 text-primary" />
-          <span className="font-display text-lg font-bold">Energy Pulse</span>
+          <span className="font-display text-lg font-bold tracking-tight">ENERGYPULSE</span>
         </Link>
         <div className="flex items-center gap-6">
           <Link to="/" className={linkClass("/")}>Latest</Link>

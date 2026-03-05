@@ -36,12 +36,16 @@
 
     --radius: 0.75rem;
 
-    --energy-solar: 45 100% 51%;
-    --energy-battery: 160 84% 39%;
-    --energy-innovation: 280 70% 55%;
-    --energy-building: 200 70% 45%;
+    /* 9 section colors */
+    --energy-policy: 45 100% 51%;
+    --energy-technology: 200 70% 45%;
     --energy-multifamily: 15 85% 55%;
-    --energy-success: 340 75% 55%;
+    --energy-market: 160 84% 39%;
+    --energy-compliance: 280 70% 55%;
+    --energy-bess: 170 70% 40%;
+    --energy-innovation: 330 75% 55%;
+    --energy-wins: 45 90% 45%;
+    --energy-digest: 220 70% 55%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
