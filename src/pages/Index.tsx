@@ -3,13 +3,22 @@ import { TopicSection } from "@/components/TopicSection";
 import { ArticleCard } from "@/components/ArticleCard";
 import { DigestCard } from "@/components/DigestCard";
 import { SectionNav } from "@/components/SectionNav";
-import { useLatestIssue, useIssueArticles } from "@/hooks/useArticles";
+import { useLatestIssue, useIssueArticles, useIssue } from "@/hooks/useArticles";
 import { ALL_TOPICS } from "@/lib/topics";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Zap } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 
 const Index = () => {
-  const { data: issue, isLoading: issueLoading } = useLatestIssue();
+  const [searchParams] = useSearchParams();
+  const issueIdParam = searchParams.get("issue");
+
+  const { data: latestIssue, isLoading: latestLoading } = useLatestIssue();
+  const { data: selectedIssue, isLoading: selectedLoading } = useIssue(issueIdParam ?? undefined);
+
+  const issue = issueIdParam ? selectedIssue : latestIssue;
+  const issueLoading = issueIdParam ? selectedLoading : latestLoading;
+
   const { data: articles, isLoading: articlesLoading } = useIssueArticles(issue?.id);
 
   const isLoading = issueLoading || articlesLoading;

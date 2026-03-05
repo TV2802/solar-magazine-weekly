@@ -53,6 +53,23 @@ export function useAllIssues() {
   });
 }
 
+export function useIssue(issueId: string | undefined) {
+  return useQuery({
+    queryKey: ["issue", issueId],
+    queryFn: async () => {
+      if (!issueId) return null;
+      const { data, error } = await supabase
+        .from("issues")
+        .select("*")
+        .eq("id", issueId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!issueId,
+  });
+}
+
 export function useArticle(articleId: string | undefined) {
   return useQuery({
     queryKey: ["article", articleId],
