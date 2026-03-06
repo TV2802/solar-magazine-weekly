@@ -16,6 +16,7 @@ export function FeedbackButtons({ articleId }: FeedbackButtonsProps) {
     >
       <button
         onClick={(e) => {
+          e.preventDefault();
           e.stopPropagation();
           toggleVote("up");
         }}
@@ -35,6 +36,7 @@ export function FeedbackButtons({ articleId }: FeedbackButtonsProps) {
       </button>
       <button
         onClick={(e) => {
+          e.preventDefault();
           e.stopPropagation();
           toggleVote("down");
         }}
