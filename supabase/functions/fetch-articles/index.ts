@@ -9,17 +9,15 @@ interface FeedSource {
   url: string;
   name: string;
   topics: string[];
-  weight: number; // Higher = more articles kept from this source
+  weight: number;
 }
 
 // ─────────────────────────────────────────
-// CURATED SOURCES — US-focused DER + Multifamily
-// Weight 3 = priority source (keep up to 10 articles)
-// Weight 2 = standard source (keep up to 6 articles)
-// Weight 1 = supplementary source (keep up to 3 articles)
+// CURATED SOURCES
+// Electrek + CleanTechnica REMOVED — too much EV/car content
 // ─────────────────────────────────────────
 const FEEDS: FeedSource[] = [
-  // TIER 1 — Trusted + High Relevance
+  // TIER 1
   {
     url: "https://pv-magazine-usa.com/feed/",
     name: "PV Magazine USA",
@@ -50,8 +48,7 @@ const FEEDS: FeedSource[] = [
     topics: ["technology_equipment", "project_wins", "policy_incentives"],
     weight: 3,
   },
-
-  // TIER 2 — High Value Additions
+  // TIER 2
   {
     url: "https://www.multifamilydive.com/feeds/news/",
     name: "Multifamily Dive",
@@ -88,8 +85,7 @@ const FEEDS: FeedSource[] = [
     topics: ["policy_incentives", "market_pricing", "project_wins"],
     weight: 2,
   },
-
-  // TIER 3 — Supplementary
+  // TIER 3
   {
     url: "https://www.affordablehousingfinance.com/rss/",
     name: "Affordable Housing Finance",
@@ -97,19 +93,12 @@ const FEEDS: FeedSource[] = [
     weight: 2,
   },
   {
-    url: "https://electrek.co/feed/",
-    name: "Electrek",
-    topics: ["bess_storage", "technology_equipment", "innovation_spotlight"],
-    weight: 1,
-  },
-  {
     url: "https://www.energy.gov/eere/articles.xml",
     name: "DOE EERE",
     topics: ["policy_incentives", "innovation_spotlight"],
     weight: 2,
   },
-
-  // PR Newswire — Press releases for project wins, funding, and real estate energy deals
+  // PR Newswire
   {
     url: "https://www.prnewswire.com/rss/news-releases-list.rss?category=ENI",
     name: "PR Newswire Energy",
@@ -125,16 +114,44 @@ const FEEDS: FeedSource[] = [
 ];
 
 // ─────────────────────────────────────────
-// US GEOGRAPHY FILTER
-// Reject articles that are clearly non-US
+// HARD BLOCKLIST — reject any article matching these
+// Based on thumbs down patterns: EV cars, non-US, utility scale only
 // ─────────────────────────────────────────
-const NON_US_TERMS = [
+const BLOCKLIST = [
+  // EV / Car content
+  "electric vehicle",
+  "electric car",
+  "electric suv",
+  "electric truck",
+  "electric bus",
+  "electric bike",
+  "e-bike",
+  "ebike",
+  "honda",
+  "toyota",
+  "ford f-",
+  "chevy",
+  "chevrolet",
+  "volkswagen",
+  "bmw",
+  "mercedes",
+  "audi",
+  "rivian",
+  "lucid motors",
+  "fisker",
+  "tesla model",
+  "cybertruck",
+  "flash charger",
+  "ev charger speed",
+  "neue klasse",
+  "ev registrations",
+  "ev sales",
+  "top selling electric",
+  // Non-US geographies
   "australia",
   "australian",
   "europe",
   "european",
-  "uk ",
-  "united kingdom",
   "germany",
   "german",
   "france",
@@ -156,17 +173,112 @@ const NON_US_TERMS = [
   "queensland",
   "victoria",
   "au$",
+  "romania",
+  "uk energy",
+  "britain",
+  "scotland",
+  "ireland",
+  "sweden",
+  "norway",
+  // Utility scale / grid scale (not DG)
+  "gigawatt-scale",
+  "1,000 mw",
+  "2,000 mw",
+  "3,000 mw",
+  "10 gw",
+  "nuclear plant",
+  "coal plant",
+  "gas peaker",
+  "lng terminal",
+  "offshore wind farm",
+  "onshore wind farm",
+  "drone attack grid",
+];
+
+// ─────────────────────────────────────────
+// DG / MULTIFAMILY PRIORITY KEYWORDS
+// Articles with these get a big relevance boost
+// ─────────────────────────────────────────
+const DG_PRIORITY_KEYWORDS = [
+  "multifamily",
+  "apartment",
+  "residential solar",
+  "rooftop solar",
+  "distributed generation",
+  "distributed energy",
+  "dg solar",
+  "behind-the-meter",
+  "btm",
+  "community solar",
+  "shared solar",
+  "virtual net metering",
+  "vnem",
+  "virtual power plant",
+  "vpp",
+  "c&i",
+  "commercial and industrial",
+  "commercial solar",
+  "tenant",
+  "landlord",
+  "property owner",
+  "affordable housing",
+  "low income solar",
+  "community development",
+  "mixed-use",
+  "net metering",
+  "nem",
+  "sgip",
+  "self-generation",
+  "microinverter",
+  "enphase",
+  "solar lease",
+  "solar ppa",
+  "battery lease",
+  "residential storage",
+  "home battery",
+  "demand charge",
+  "time of use",
+  "tou rate",
+];
+
+// ─────────────────────────────────────────
+// US GEOGRAPHY FILTER
+// ─────────────────────────────────────────
+const NON_US_TERMS = [
+  "australia",
+  "australian",
+  "europe",
+  "european",
+  "uk ",
+  "united kingdom",
+  "germany",
+  "german",
+  "france",
+  "french",
+  "china",
+  "chinese",
+  "india",
+  "canada",
+  "canadian",
+  "kenya",
+  "africa",
+  "japan",
+  "nsw",
+  "au$",
   "gbp",
-  "eur ",
+  "romania",
+  "britain",
   "ofgem",
-  "ofcom",
-  "ontario energy",
-  "british columbia",
 ];
 
 function isUSContent(title: string, summary: string): boolean {
   const text = `${title} ${summary}`.toLowerCase();
   return !NON_US_TERMS.some((term) => text.includes(term));
+}
+
+function isBlocked(title: string, summary: string): boolean {
+  const text = `${title} ${summary}`.toLowerCase();
+  return BLOCKLIST.some((term) => text.includes(term));
 }
 
 // ─────────────────────────────────────────
@@ -202,12 +314,12 @@ const TOPIC_KEYWORDS: Record<string, string[]> = {
     "grant",
     "doe loan",
     "clean energy standard",
-    "renewable portfolio",
     "rps",
     "community benefit",
-    "low income housing tax credit",
     "lihtc",
     "new market tax credit",
+    "community solar program",
+    "low income housing",
   ],
   technology_equipment: [
     "module",
@@ -224,7 +336,6 @@ const TOPIC_KEYWORDS: Record<string, string[]> = {
     "smart panel",
     "load management",
     "ul certification",
-    "ev charging",
     "evse",
     "optimizer",
     "rapid shutdown",
@@ -234,6 +345,11 @@ const TOPIC_KEYWORDS: Record<string, string[]> = {
     "smart meter",
     "monitoring system",
     "commissioning",
+    "enphase",
+    "sma",
+    "solaredge",
+    "fronius",
+    "schneider electric",
   ],
   multifamily_nexus: [
     "multifamily",
@@ -254,7 +370,6 @@ const TOPIC_KEYWORDS: Record<string, string[]> = {
     "leed",
     "enterprise green communities",
     "fitwel",
-    "sustainability certification",
     "property management",
     "common area",
     "master meter",
@@ -276,6 +391,9 @@ const TOPIC_KEYWORDS: Record<string, string[]> = {
     "energy burden",
     "green building",
     "decarbonize building",
+    "multifamily executive",
+    "multifamily dive",
+    "multi-housing",
   ],
   market_pricing: [
     "pricing",
@@ -295,16 +413,17 @@ const TOPIC_KEYWORDS: Record<string, string[]> = {
     "utility rate",
     "market trend",
     "interconnection queue",
-    "wait time",
-    "backlog",
     "module cost",
     "battery cost",
     "installation cost",
     "lcoe",
     "levelized cost",
     "financing rate",
-    "interest rate",
     "yield",
+    "m&a",
+    "acquisition price",
+    "valuation",
+    "deal size",
   ],
   code_compliance: [
     "title 24",
@@ -333,6 +452,7 @@ const TOPIC_KEYWORDS: Record<string, string[]> = {
     "state mandate",
     "electrification mandate",
     "gas ban",
+    "epa",
   ],
   bess_storage: [
     "battery storage",
@@ -360,11 +480,14 @@ const TOPIC_KEYWORDS: Record<string, string[]> = {
     "stacked incentives",
     "storage plus solar",
     "co-located",
-    "megapack",
-    "powerwall",
-    "powerpack",
-    "fluence",
-    "powin",
+    "residential storage",
+    "home battery",
+    "virtual power plant",
+    "vpp",
+    "enerflo",
+    "palmetto",
+    "sunrun storage",
+    "sunnova storage",
   ],
   innovation_spotlight: [
     "innovation",
@@ -383,7 +506,6 @@ const TOPIC_KEYWORDS: Record<string, string[]> = {
     "novel approach",
     "building-integrated",
     "bipv",
-    "agrivoltaic",
     "energy management system",
     "ems",
     "virtual power plant",
@@ -391,6 +513,9 @@ const TOPIC_KEYWORDS: Record<string, string[]> = {
     "ai energy",
     "machine learning grid",
     "digital twin",
+    "distributed solar software",
+    "deal-making platform",
+    "solar software",
   ],
   project_wins: [
     "commissioned",
@@ -414,16 +539,18 @@ const TOPIC_KEYWORDS: Record<string, string[]> = {
     "long-term agreement",
     "offtake",
     "ppa signed",
+    "raises",
+    "secures",
+    "closes",
+    "announces",
+    "launches",
   ],
 };
 
-// ─────────────────────────────────────────
-// SECTION WEIGHTS — boost Multifamily, Policy, BESS
-// ─────────────────────────────────────────
 const SECTION_BOOST: Record<string, number> = {
-  multifamily_nexus: 2.0,
-  policy_incentives: 1.8,
-  bess_storage: 1.8,
+  multifamily_nexus: 2.5,
+  policy_incentives: 2.0,
+  bess_storage: 2.0,
   code_compliance: 1.5,
   market_pricing: 1.3,
   project_wins: 1.2,
@@ -436,13 +563,17 @@ function categorize(title: string, summary: string, feedTopics: string[]): { top
   let bestTopic = feedTopics[0] || "innovation_spotlight";
   let bestScore = 0;
 
+  // Big boost for DG/multifamily specific content
+  const dgBoost = DG_PRIORITY_KEYWORDS.filter((kw) => text.includes(kw)).length * 3;
+
   for (const [topic, keywords] of Object.entries(TOPIC_KEYWORDS)) {
     let score = 0;
     for (const kw of keywords) {
-      if (text.includes(kw)) score += kw.split(" ").length; // Multi-word matches score higher
+      if (text.includes(kw)) score += kw.split(" ").length;
     }
     if (feedTopics.includes(topic)) score += 1;
     score *= SECTION_BOOST[topic] || 1.0;
+    score += topic === "multifamily_nexus" ? dgBoost : 0;
     if (score > bestScore) {
       bestScore = score;
       bestTopic = topic;
@@ -452,9 +583,6 @@ function categorize(title: string, summary: string, feedTopics: string[]): { top
   return { topic: bestTopic, score: bestScore };
 }
 
-// ─────────────────────────────────────────
-// XML HELPERS
-// ─────────────────────────────────────────
 function extractText(xml: string, tag: string): string {
   const regex = new RegExp(`<${tag}[^>]*>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</${tag}>`, "i");
   const match = xml.match(regex);
@@ -476,9 +604,6 @@ function extractImage(itemXml: string): string | null {
   return null;
 }
 
-// ─────────────────────────────────────────
-// FETCH SINGLE RSS FEED
-// ─────────────────────────────────────────
 async function fetchFeed(feed: FeedSource): Promise<
   Array<{
     title: string;
@@ -496,17 +621,14 @@ async function fetchFeed(feed: FeedSource): Promise<
       headers: { "User-Agent": "SolarMagazineWeekly/1.0" },
       signal: AbortSignal.timeout(10000),
     });
-    if (!res.ok) {
-      console.error(`Failed ${feed.url}: ${res.status}`);
-      return [];
-    }
+    if (!res.ok) return [];
 
     const xml = await res.text();
     const items = xml.split(/<item[\s>]/i).slice(1);
     const maxArticles = feed.weight === 3 ? 10 : feed.weight === 2 ? 6 : 3;
 
     const results = [];
-    for (const itemXml of items.slice(0, 20)) {
+    for (const itemXml of items.slice(0, 25)) {
       const title = extractText(itemXml, "title");
       const description = extractText(itemXml, "description");
       const link = extractText(itemXml, "link") || itemXml.match(/<link[^>]*>(.*?)<\/link>/)?.[1]?.trim() || "";
@@ -514,9 +636,8 @@ async function fetchFeed(feed: FeedSource): Promise<
       const image = extractImage(itemXml);
 
       if (!title || !link) continue;
-
-      // US geography filter
       if (!isUSContent(title, description)) continue;
+      if (isBlocked(title, description)) continue;
 
       const { topic, score } = categorize(title, description, feed.topics);
 
@@ -532,7 +653,6 @@ async function fetchFeed(feed: FeedSource): Promise<
       });
     }
 
-    // Sort by relevance score and take top articles based on weight
     return results.sort((a, b) => b.relevance_score - a.relevance_score).slice(0, maxArticles);
   } catch (e) {
     console.error(`Error fetching ${feed.url}:`, e);
@@ -540,9 +660,6 @@ async function fetchFeed(feed: FeedSource): Promise<
   }
 }
 
-// ─────────────────────────────────────────
-// MAIN HANDLER
-// ─────────────────────────────────────────
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -553,7 +670,6 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get next issue number
     const { data: lastIssue } = await supabase
       .from("issues")
       .select("issue_number")
@@ -568,7 +684,6 @@ Deno.serve(async (req) => {
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6);
 
-    // Create new issue
     const { data: issue, error: issueError } = await supabase
       .from("issues")
       .insert({
@@ -581,10 +696,8 @@ Deno.serve(async (req) => {
 
     if (issueError) throw issueError;
 
-    // Fetch all feeds in parallel
     const allArticles = (await Promise.all(FEEDS.map(fetchFeed))).flat();
 
-    // Deduplicate by URL
     const seen = new Set<string>();
     const unique = allArticles.filter((a) => {
       if (seen.has(a.source_url)) return false;
@@ -592,10 +705,7 @@ Deno.serve(async (req) => {
       return true;
     });
 
-    // Sort all articles by relevance score
     unique.sort((a, b) => b.relevance_score - a.relevance_score);
-
-    // Mark featured as highest scored article with an image
     const featuredIdx = unique.findIndex((a) => a.image_url);
 
     const toInsert = unique.map((a, i) => ({
@@ -609,7 +719,6 @@ Deno.serve(async (req) => {
       if (insertError) throw insertError;
     }
 
-    // Trigger digest generation
     try {
       await fetch(`${supabaseUrl}/functions/v1/generate-digest`, {
         method: "POST",
@@ -623,7 +732,6 @@ Deno.serve(async (req) => {
       console.error("Digest generation failed:", digestErr);
     }
 
-    // Summary by section
     const sectionCounts: Record<string, number> = {};
     toInsert.forEach((a) => {
       sectionCounts[a.topic] = (sectionCounts[a.topic] || 0) + 1;
@@ -634,7 +742,6 @@ Deno.serve(async (req) => {
         success: true,
         issue_number: issueNumber,
         articles_count: toInsert.length,
-        us_filtered: allArticles.length - unique.length,
         sections: sectionCounts,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
