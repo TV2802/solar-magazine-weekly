@@ -8,6 +8,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import Index from "./pages/Index";
 import Archive from "./pages/Archive";
 import Saved from "./pages/Saved";
+import MarketIntelligence from "./pages/MarketIntelligence";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/archive" element={<Archive />} />
               <Route path="/saved" element={<Saved />} />
+              <Route path="/market" element={<MarketIntelligence />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
