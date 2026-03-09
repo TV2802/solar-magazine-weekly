@@ -8,31 +8,43 @@ export function HeroBanner({ issue }: { issue: Issue | null }) {
     : format(new Date(), "MMMM d, yyyy");
 
   return (
-    <header className="relative overflow-hidden border-b border-border bg-foreground text-background">
-      <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-energy-policy via-energy-bess to-energy-innovation" />
+    <header className="relative overflow-hidden bg-background border-b border-border">
+      {/* Top accent line */}
+      <div className="absolute left-0 top-0 h-[3px] w-full bg-gradient-to-r from-primary via-secondary to-primary" />
 
-      <div className="container mx-auto flex flex-col items-start gap-2 px-4 py-10 md:flex-row md:items-end md:justify-between md:py-16">
-        <div>
-          <div className="mb-3 flex items-center gap-2">
-            <Zap className="h-6 w-6 text-primary" />
-            <span className="font-display text-sm font-semibold uppercase tracking-widest text-primary">
-              ENERGYPULSE
-            </span>
-          </div>
-          <h1 className="font-display text-4xl font-bold leading-none md:text-6xl">
-            Weekly Briefing
-          </h1>
-          <p className="mt-2 max-w-lg text-sm text-muted-foreground">
-            Curated DER intelligence for multifamily solar + storage developers
-          </p>
+      {/* Subtle grid texture */}
+      <div
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: `linear-gradient(hsl(var(--primary) / 0.3) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary) / 0.3) 1px, transparent 1px)`,
+          backgroundSize: '40px 40px',
+        }}
+      />
+
+      <div className="container relative mx-auto flex flex-col items-center px-4 py-16 text-center md:py-24">
+        {/* Logo */}
+        <div className="mb-6 flex items-center gap-3">
+          <Zap className="h-8 w-8 text-primary md:h-10 md:w-10" />
+          <span className="font-display text-4xl font-black tracking-tight text-foreground md:text-6xl">
+            ENERGYPULSE
+          </span>
         </div>
-        <div className="text-right">
+
+        {/* Tagline */}
+        <p className="mb-8 max-w-lg font-mono text-sm tracking-wide text-muted-foreground md:text-base">
+          Curated DER intelligence for multifamily solar + storage developers
+        </p>
+
+        {/* Issue info */}
+        <div className="flex items-center gap-4">
           {issue && (
-            <p className="mb-1 font-display text-lg font-semibold text-primary">
-              Issue #{issue.issue_number}
-            </p>
+            <span className="rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 font-mono text-xs font-medium tracking-wider text-primary">
+              ISSUE #{issue.issue_number}
+            </span>
           )}
-          <p className="text-sm text-muted-foreground">{weekLabel}</p>
+          <span className="font-mono text-xs tracking-wider text-muted-foreground">
+            {weekLabel}
+          </span>
         </div>
       </div>
     </header>

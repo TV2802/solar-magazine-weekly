@@ -33,12 +33,12 @@ export function DigestCard({ issueId, digestText }: DigestCardProps) {
   };
 
   return (
-    <div className="mb-12 rounded-lg border border-energy-digest/30 bg-card p-6 md:p-8">
+    <div className="mb-12 overflow-hidden rounded-md border-l-[5px] border-l-primary bg-card p-6 md:p-8">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Newspaper className="h-6 w-6 text-energy-digest" />
-          <h2 className="font-display text-xl font-bold text-card-foreground">
-            📰 Weekly News Digest
+          <Newspaper className="h-5 w-5 text-primary" />
+          <h2 className="font-display text-xl font-bold italic text-card-foreground">
+            Weekly News Digest
           </h2>
         </div>
         <Button
@@ -46,19 +46,19 @@ export function DigestCard({ issueId, digestText }: DigestCardProps) {
           size="sm"
           onClick={handleRegenerate}
           disabled={isGenerating || !issueId}
-          className="gap-2"
+          className="gap-2 rounded-full border-border font-mono text-[11px] tracking-wider"
         >
-          <RefreshCw className={`h-4 w-4 ${isGenerating ? "animate-spin" : ""}`} />
-          {isGenerating ? "Generating…" : "Refresh"}
+          <RefreshCw className={`h-3.5 w-3.5 ${isGenerating ? "animate-spin" : ""}`} />
+          {isGenerating ? "GENERATING…" : "REFRESH"}
         </Button>
       </div>
       {digestText ? (
-        <p className="text-base leading-relaxed text-card-foreground/90 italic">
+        <p className="text-base leading-[1.8] text-card-foreground/80 italic">
           {digestText}
         </p>
       ) : (
-        <p className="text-sm text-muted-foreground">
-          No digest generated yet. Click Refresh to generate an AI editorial summary of this week's top stories.
+        <p className="font-mono text-sm text-muted-foreground">
+          No digest generated yet. Click Refresh to generate an AI editorial summary.
         </p>
       )}
     </div>

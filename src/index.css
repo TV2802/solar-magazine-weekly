@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,17 +6,17 @@
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
-    --foreground: 220 25% 10%;
+    --background: 220 30% 96%;
+    --foreground: 216 50% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 25% 10%;
+    --card-foreground: 216 50% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 25% 10%;
+    --popover-foreground: 216 50% 10%;
 
-    --primary: 45 100% 51%;
-    --primary-foreground: 220 25% 10%;
+    --primary: 43 96% 56%;
+    --primary-foreground: 216 50% 10%;
 
     --secondary: 160 84% 39%;
     --secondary-foreground: 0 0% 100%;
@@ -32,20 +32,20 @@
 
     --border: 220 13% 87%;
     --input: 220 13% 87%;
-    --ring: 45 100% 51%;
+    --ring: 43 96% 56%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    /* 9 section colors */
-    --energy-policy: 45 100% 51%;
-    --energy-technology: 200 70% 45%;
+    /* Section colors */
+    --energy-policy: 43 96% 56%;
+    --energy-technology: 200 70% 50%;
     --energy-multifamily: 15 85% 55%;
     --energy-market: 160 84% 39%;
-    --energy-compliance: 280 70% 55%;
-    --energy-bess: 170 70% 40%;
+    --energy-compliance: 280 60% 60%;
+    --energy-bess: 170 70% 45%;
     --energy-innovation: 330 75% 55%;
-    --energy-wins: 45 90% 45%;
-    --energy-digest: 220 70% 55%;
+    --energy-wins: 50 90% 50%;
+    --energy-digest: 43 96% 56%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -58,23 +58,23 @@
   }
 
   .dark {
-    --background: 213 36% 10%;
-    --foreground: 210 20% 93%;
+    --background: 218 55% 10%;
+    --foreground: 210 25% 92%;
 
-    --card: 213 30% 14%;
-    --card-foreground: 210 20% 93%;
+    --card: 215 45% 12%;
+    --card-foreground: 210 25% 95%;
 
-    --popover: 213 30% 14%;
-    --popover-foreground: 210 20% 93%;
+    --popover: 215 45% 12%;
+    --popover-foreground: 210 25% 95%;
 
-    --primary: 45 100% 51%;
-    --primary-foreground: 220 25% 10%;
+    --primary: 43 96% 56%;
+    --primary-foreground: 216 50% 8%;
 
     --secondary: 160 84% 39%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 213 25% 18%;
-    --muted-foreground: 215 15% 55%;
+    --muted: 215 40% 16%;
+    --muted-foreground: 215 20% 50%;
 
     --accent: 220 70% 55%;
     --accent-foreground: 0 0% 100%;
@@ -82,24 +82,24 @@
     --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 213 25% 20%;
-    --input: 213 25% 20%;
-    --ring: 45 100% 51%;
+    --border: 215 35% 18%;
+    --input: 215 35% 18%;
+    --ring: 43 96% 56%;
 
-    --sidebar-background: 240 5.9% 10%;
+    --sidebar-background: 218 55% 8%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent: 215 40% 14%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-border: 215 35% 18%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
 @layer base {
   * {
-    @apply border-border transition-colors duration-200;
+    @apply border-border;
   }
 
   body {
@@ -108,5 +108,11 @@
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
+  }
+}
+
+@layer utilities {
+  .font-mono-label {
+    font-family: 'DM Mono', monospace;
   }
 }
