@@ -16,7 +16,6 @@ interface EIARecord {
 interface EIAResponse {
   response: {
     data: EIARecord[];
-    total: number;
   };
 }
 
@@ -31,8 +30,8 @@ Deno.serve(async (req) => {
       throw new Error("EIA_API_KEY not configured");
     }
 
-    // Fetch all states, get enough records to cover 2 months for all ~51 state entries (including US/DC)
-    const url = `https://api.eia.gov/v2/electricity/retail-sales/data?api_key=${apiKey}&data[]=price&facets[sectorid][]=RES&frequency=monthly&sort[0][column]=period&sort[0][direction]=desc&length=120`;
+    // Fetch all states — no state filters, length=200 to cover 2 months × ~52 entries
+    const url = `https://api.eia.gov/v2/electricity/retail-sales/data?api_key=${apiKey}&data[]=price&facets[sectorid][]=RES&frequency=monthly&sort[0][column]=period&sort[0][direction]=desc&length=200`;
 
     const res = await fetch(url);
     if (!res.ok) {
@@ -81,7 +80,6 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error("EIA fetch error:", error);
-
     return new Response(JSON.stringify({ rates: [], fetched_at: null, error: error.message }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
