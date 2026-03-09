@@ -1,5 +1,6 @@
 import { TOPIC_CONFIG } from "@/lib/topics";
 import { FeedbackButtons } from "./FeedbackButtons";
+import { BookmarkButton } from "./BookmarkButton";
 import { Clock } from "lucide-react";
 import type { Article } from "@/hooks/useArticles";
 import type { Database } from "@/integrations/supabase/types";
