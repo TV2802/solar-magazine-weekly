@@ -183,6 +183,33 @@ export type Database = {
         }
         Relationships: []
       }
+      pvwatts_cache: {
+        Row: {
+          ac_annual: number | null
+          capacity_factor: number | null
+          fetched_at: string
+          id: string
+          state_id: string
+          state_name: string
+        }
+        Insert: {
+          ac_annual?: number | null
+          capacity_factor?: number | null
+          fetched_at?: string
+          id?: string
+          state_id: string
+          state_name: string
+        }
+        Update: {
+          ac_annual?: number | null
+          capacity_factor?: number | null
+          fetched_at?: string
+          id?: string
+          state_id?: string
+          state_name?: string
+        }
+        Relationships: []
+      }
       saved_articles: {
         Row: {
           article_id: string
