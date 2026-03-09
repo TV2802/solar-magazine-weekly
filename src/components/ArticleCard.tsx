@@ -66,7 +66,7 @@ export function ArticleCard({ article, featured = false, onSelect }: ArticleCard
             {config.emoji} {config.label}
           </span>
 
-          <h2 className="mb-3 font-display text-2xl font-extrabold italic leading-[1.1] text-card-foreground md:text-4xl">
+          <h2 className="mb-3 font-display text-2xl font-extrabold leading-[1.1] text-card-foreground md:text-4xl">
             {article.title}
           </h2>
 
