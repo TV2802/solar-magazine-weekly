@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TrendingUp, TrendingDown, Minus, Activity, DollarSign, Zap, Clock } from "lucide-react";
 import { format } from "date-fns";
+import ElectricityRateMap from "@/components/ElectricityRateMap";
 
 interface StateRate {
   stateId: string;
