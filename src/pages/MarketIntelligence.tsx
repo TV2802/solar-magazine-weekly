@@ -74,15 +74,7 @@ export default function MarketIntelligence() {
         setRatesFetched(data.fetched_at);
       } catch (err: any) {
         console.error("Rates fetch error:", err);
-        const fallbackRates: StateRate[] = [
-          { stateId: 'CA', stateName: 'California', price: null, period: 'Data unavailable', trend: 'neutral' },
-          { stateId: 'CO', stateName: 'Colorado', price: null, period: 'Data unavailable', trend: 'neutral' },
-          { stateId: 'MA', stateName: 'Massachusetts', price: null, period: 'Data unavailable', trend: 'neutral' },
-          { stateId: 'NJ', stateName: 'New Jersey', price: null, period: 'Data unavailable', trend: 'neutral' },
-          { stateId: 'NY', stateName: 'New York', price: null, period: 'Data unavailable', trend: 'neutral' },
-          { stateId: 'TX', stateName: 'Texas', price: null, period: 'Data unavailable', trend: 'neutral' },
-        ];
-        setStateRates(fallbackRates);
+        setStateRates([]);
         setRatesError(err.message || "Failed to fetch rates");
       } finally {
         setRatesLoading(false);
