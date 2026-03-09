@@ -1,9 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 
 const GEO_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
-const HIGHLIGHTED_STATES = ["CA", "NY", "TX", "MA", "NJ", "CO"];
+const DEFAULT_TRACKED = ["CA", "NY", "TX", "MA", "NJ", "CO"];
 
 // FIPS → state abbreviation mapping
 const FIPS_TO_ABBR: Record<string, string> = {
@@ -20,6 +20,21 @@ const FIPS_TO_ABBR: Record<string, string> = {
   "56": "WY",
 };
 
+// State abbreviation → full name (fallback for states not in EIA data)
+const ABBR_TO_NAME: Record<string, string> = {
+  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
+  CO: "Colorado", CT: "Connecticut", DE: "Delaware", DC: "District of Columbia",
+  FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho", IL: "Illinois",
+  IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana",
+  ME: "Maine", MD: "Maryland", MA: "Massachusetts", MI: "Michigan", MN: "Minnesota",
+  MS: "Mississippi", MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada",
+  NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York",
+  NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma",
+  OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina",
+  SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont",
+  VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
+};
+
 interface StateRate {
   stateId: string;
   stateName: string;
@@ -28,26 +43,31 @@ interface StateRate {
   trend: "up" | "down" | "neutral";
 }
 
+interface TooltipData {
+  x: number;
+  y: number;
+  name: string;
+  price: number | null;
+  trend: string;
+  period: string;
+}
+
 interface Props {
   rates: StateRate[];
   loading: boolean;
 }
 
 function getColor(price: number | null, min: number, max: number): string {
-  if (price == null) return "#27272a"; // zinc-800
+  if (price == null) return "#27272a";
   const range = max - min || 1;
-  const t = (price - min) / range; // 0 = cheapest, 1 = most expensive
-  // dark blue → amber → red
+  const t = (price - min) / range;
   if (t < 0.33) {
-    // dark blue to teal
     const s = t / 0.33;
     return `hsl(${210 - s * 30}, ${60 + s * 10}%, ${25 + s * 15}%)`;
   } else if (t < 0.66) {
-    // teal to amber
     const s = (t - 0.33) / 0.33;
     return `hsl(${180 - s * 140}, ${70 + s * 10}%, ${35 + s * 15}%)`;
   } else {
-    // amber to red
     const s = (t - 0.66) / 0.34;
     return `hsl(${40 - s * 40}, ${80 + s * 10}%, ${45 + s * 5}%)`;
   }
@@ -60,7 +80,8 @@ function TrendArrow({ trend }: { trend: string }) {
 }
 
 export default function ElectricityRateMap({ rates, loading }: Props) {
-  const [tooltip, setTooltip] = useState<{ x: number; y: number; rate: StateRate } | null>(null);
+  const [tooltip, setTooltip] = useState<TooltipData | null>(null);
+  const [tracked, setTracked] = useState<Set<string>>(new Set(DEFAULT_TRACKED));
 
   const rateMap = useMemo(() => {
     const m: Record<string, StateRate> = {};
@@ -73,6 +94,15 @@ export default function ElectricityRateMap({ rates, loading }: Props) {
     if (!prices.length) return { min: 0, max: 30 };
     return { min: Math.min(...prices), max: Math.max(...prices) };
   }, [rates]);
+
+  const handleClick = useCallback((abbr: string) => {
+    setTracked((prev) => {
+      const next = new Set(prev);
+      if (next.has(abbr)) next.delete(abbr);
+      else next.add(abbr);
+      return next;
+    });
+  }, []);
 
   if (loading) {
     return (
@@ -90,11 +120,7 @@ export default function ElectricityRateMap({ rates, loading }: Props) {
 
   return (
     <div className="relative">
-      {/* Map */}
-      <div
-        className="relative"
-        onMouseLeave={() => setTooltip(null)}
-      >
+      <div className="relative" onMouseLeave={() => setTooltip(null)}>
         <ComposableMap
           projection="geoAlbersUsa"
           projectionConfig={{ scale: 1000 }}
@@ -107,33 +133,42 @@ export default function ElectricityRateMap({ rates, loading }: Props) {
               geographies.map((geo) => {
                 const fips = geo.id;
                 const abbr = FIPS_TO_ABBR[fips];
-                const rate = abbr ? rateMap[abbr] : undefined;
-                const isHighlighted = abbr && HIGHLIGHTED_STATES.includes(abbr);
-                const fillColor = rate ? getColor(rate.price, min, max) : "#27272a";
+                if (!abbr) return null;
+                const rate = rateMap[abbr];
+                const price = rate?.price != null ? parseFloat(String(rate.price)) : null;
+                const fillColor = getColor(price, min, max);
+                const isTracked = tracked.has(abbr);
+                const stateName = rate?.stateName || ABBR_TO_NAME[abbr] || abbr;
 
                 return (
                   <Geography
                     key={geo.rsmKey}
                     geography={geo}
                     fill={fillColor}
-                    stroke={isHighlighted ? "#f59e0b" : "#18181b"}
-                    strokeWidth={isHighlighted ? 1.5 : 0.5}
+                    stroke={isTracked ? "#f59e0b" : "#18181b"}
+                    strokeWidth={isTracked ? 1.5 : 0.5}
                     style={{
                       default: { outline: "none" },
                       hover: { outline: "none", fill: "#fbbf24", cursor: "pointer" },
                       pressed: { outline: "none" },
                     }}
                     onMouseEnter={(evt) => {
-                      if (rate) {
-                        setTooltip({ x: evt.clientX, y: evt.clientY, rate });
-                      }
+                      setTooltip({
+                        x: evt.clientX,
+                        y: evt.clientY,
+                        name: stateName,
+                        price,
+                        trend: rate?.trend || "neutral",
+                        period: rate?.period || "No data",
+                      });
                     }}
                     onMouseMove={(evt) => {
-                      if (rate) {
-                        setTooltip({ x: evt.clientX, y: evt.clientY, rate });
-                      }
+                      setTooltip((prev) =>
+                        prev ? { ...prev, x: evt.clientX, y: evt.clientY } : null
+                      );
                     }}
                     onMouseLeave={() => setTooltip(null)}
+                    onClick={() => handleClick(abbr)}
                   />
                 );
               })
@@ -148,22 +183,27 @@ export default function ElectricityRateMap({ rates, loading }: Props) {
           className="pointer-events-none fixed z-50 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 shadow-xl"
           style={{ left: tooltip.x + 12, top: tooltip.y - 10 }}
         >
-          <p className="font-display text-sm font-bold text-zinc-100">{tooltip.rate.stateName}</p>
+          <p className="font-display text-sm font-bold text-zinc-100">{tooltip.name}</p>
           <p className="font-mono text-lg font-bold text-amber-400">
-            {tooltip.rate.price != null
-              ? `${parseFloat(String(tooltip.rate.price)).toFixed(2)} ¢/kWh`
-              : "No data"}
+            {tooltip.price != null ? `${tooltip.price.toFixed(2)} ¢/kWh` : "No data"}
           </p>
-          <p className="flex items-center gap-1 font-mono text-xs text-zinc-400">
-            vs prev month: <TrendArrow trend={tooltip.rate.trend} />
-            <span className={
-              tooltip.rate.trend === "up" ? "text-green-400" :
-              tooltip.rate.trend === "down" ? "text-red-400" : "text-zinc-500"
-            }>
-              {tooltip.rate.trend === "up" ? "Higher" : tooltip.rate.trend === "down" ? "Lower" : "Stable"}
-            </span>
-          </p>
-          <p className="mt-1 font-mono text-[10px] text-zinc-600">{tooltip.rate.period}</p>
+          {tooltip.price != null && (
+            <p className="flex items-center gap-1 font-mono text-xs text-zinc-400">
+              vs prev month: <TrendArrow trend={tooltip.trend} />
+              <span
+                className={
+                  tooltip.trend === "up"
+                    ? "text-green-400"
+                    : tooltip.trend === "down"
+                    ? "text-red-400"
+                    : "text-zinc-500"
+                }
+              >
+                {tooltip.trend === "up" ? "Higher" : tooltip.trend === "down" ? "Lower" : "Stable"}
+              </span>
+            </p>
+          )}
+          <p className="mt-1 font-mono text-[10px] text-zinc-600">{tooltip.period}</p>
         </div>
       )}
 
@@ -178,10 +218,14 @@ export default function ElectricityRateMap({ rates, loading }: Props) {
         <span className="font-mono text-[10px] text-zinc-500">{max.toFixed(1)}¢</span>
         <span className="ml-2 font-mono text-[10px] text-zinc-600">¢/kWh</span>
       </div>
-      <div className="mt-1 flex items-center justify-center gap-3 font-mono text-[10px] text-zinc-500">
+      <div className="mt-2 flex items-center justify-center gap-4 font-mono text-[10px] text-zinc-500">
         <span className="flex items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-full border border-amber-500 bg-zinc-800" />
-          Tracked states
+          <span className="inline-block h-2 w-2 rounded-full border-2 border-amber-500 bg-zinc-800" />
+          Tracked (click to toggle)
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block h-2 w-2 rounded-full bg-zinc-600" />
+          No data
         </span>
       </div>
     </div>
