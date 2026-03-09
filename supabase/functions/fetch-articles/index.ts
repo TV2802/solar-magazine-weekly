@@ -664,7 +664,7 @@ async function fetchFeed(feed: FeedSource): Promise<
 
       results.push({
         title,
-        summary: description.slice(0, 500),
+        summary: stripHtml(description).slice(0, 500),
         source_url: link,
         source_name: feed.name,
         image_url: image,
