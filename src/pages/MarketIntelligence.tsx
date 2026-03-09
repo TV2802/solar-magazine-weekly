@@ -6,7 +6,7 @@ import { format } from "date-fns";
 interface StateRate {
   stateId: string;
   stateName: string;
-  price: number;
+  price: number | null;
   period: string;
   trend: "up" | "down" | "neutral";
 }
