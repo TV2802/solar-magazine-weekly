@@ -229,7 +229,7 @@ export default function ElectricityRateMap({ rates, loading, tracked, onToggleTr
     return m;
   }, [rateMap, solarMap, minPrice, maxPrice, minSolar, maxSolar]);
 
-  // Coloring function based on mode
+  // Coloring function based on active color mode priority
   const getColor = useCallback(
     (abbr: string, isTracked: boolean): string => {
       if (isTracked) return STATE_TRACKED_OVERRIDE[abbr] || STATE_TO_ISO[abbr]?.tracked || "#f59e0b";
@@ -238,15 +238,13 @@ export default function ElectricityRateMap({ rates, loading, tracked, onToggleTr
       if (!region) return "#18181b";
       const baseColor = STATE_BASE_OVERRIDE[abbr] || region.base;
 
-      if (mode === "rates") {
-        const price = rateMap[abbr]?.price;
-        if (price == null) return adjustBrightness(baseColor, 0.85);
-        const range = maxPrice - minPrice || 1;
-        const t = (price - minPrice) / range;
-        return adjustBrightness(baseColor, 0.85 + t * 0.30);
+      if (activeColorMode === "index") {
+        const score = opportunityMap[abbr];
+        if (score == null) return "#1a1a1a";
+        return lerpColor("#7a6c00", "#16a34a", score);
       }
 
-      if (mode === "solar") {
+      if (activeColorMode === "solar") {
         const ac = solarMap[abbr]?.ac_annual;
         if (ac == null) return adjustBrightness(baseColor, 0.6);
         const range = maxSolar - minSolar || 1;
@@ -254,12 +252,14 @@ export default function ElectricityRateMap({ rates, loading, tracked, onToggleTr
         return adjustBrightness(baseColor, 0.7 + t * 0.6);
       }
 
-      // index mode: gold (#b8860b) → green (#22c55e)
-      const score = opportunityMap[abbr];
-      if (score == null) return "#1a1a1a";
-      return lerpColor("#7a6c00", "#16a34a", score);
+      // rates (default)
+      const price = rateMap[abbr]?.price;
+      if (price == null) return adjustBrightness(baseColor, 0.85);
+      const range = maxPrice - minPrice || 1;
+      const t = (price - minPrice) / range;
+      return adjustBrightness(baseColor, 0.85 + t * 0.30);
     },
-    [mode, rateMap, solarMap, opportunityMap, minPrice, maxPrice, minSolar, maxSolar]
+    [activeColorMode, rateMap, solarMap, opportunityMap, minPrice, maxPrice, minSolar, maxSolar]
   );
 
   const { isoLabelsToShow } = useMemo(() => {
