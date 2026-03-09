@@ -115,7 +115,13 @@ interface SolarData {
   capacity_factor: number | null;
 }
 
-type MapMode = "rates" | "solar" | "index";
+type LayerKey = "rates" | "solar" | "index";
+
+interface Layers {
+  rates: boolean;
+  solar: boolean;
+  index: boolean;
+}
 
 interface TooltipData {
   x: number;
