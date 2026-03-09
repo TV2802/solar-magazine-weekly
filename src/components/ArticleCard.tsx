@@ -66,7 +66,7 @@ export function ArticleCard({ article, featured = false, onSelect }: ArticleCard
             {config.emoji} {config.label}
           </span>
 
-          <h2 className="mb-3 font-display text-2xl font-extrabold italic leading-[1.1] text-card-foreground md:text-4xl">
+          <h2 className="mb-3 font-display text-2xl font-extrabold leading-[1.1] text-card-foreground md:text-4xl">
             {article.title}
           </h2>
 
@@ -111,7 +111,7 @@ export function ArticleCard({ article, featured = false, onSelect }: ArticleCard
           {config.label}
         </span>
 
-        <h3 className="mb-2 font-display text-lg font-bold italic leading-snug text-card-foreground md:text-xl">
+        <h3 className="mb-2 font-display text-lg font-bold leading-snug text-card-foreground md:text-xl">
           {article.title}
         </h3>
 

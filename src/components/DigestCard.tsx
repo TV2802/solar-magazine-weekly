@@ -37,7 +37,7 @@ export function DigestCard({ issueId, digestText }: DigestCardProps) {
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Newspaper className="h-5 w-5 text-primary" />
-          <h2 className="font-display text-xl font-bold italic text-card-foreground">
+          <h2 className="font-display text-xl font-bold text-card-foreground">
             Weekly News Digest
           </h2>
         </div>
@@ -53,7 +53,7 @@ export function DigestCard({ issueId, digestText }: DigestCardProps) {
         </Button>
       </div>
       {digestText ? (
-        <p className="text-base leading-[1.8] text-card-foreground/80 italic">
+        <p className="font-body text-base leading-[1.8] text-card-foreground/80">
           {digestText}
         </p>
       ) : (

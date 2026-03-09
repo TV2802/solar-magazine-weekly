@@ -108,7 +108,7 @@ export function ArticleDrawer({ article, open, onClose }: ArticleDrawerProps) {
           </div>
 
           {/* Title */}
-          <h2 className="mb-6 font-display text-2xl font-extrabold italic leading-[1.1] text-foreground md:text-3xl">
+          <h2 className="mb-6 font-display text-2xl font-extrabold leading-[1.1] text-foreground md:text-3xl">
             {article.title}
           </h2>
 
