@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Zap, Bookmark } from "lucide-react";
+import { Zap, Bookmark, Activity } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { useSavedArticles } from "@/hooks/useSavedArticles";
 
@@ -22,6 +22,15 @@ export function SiteNav() {
         <div className="flex items-center gap-5">
           <Link to="/" className={linkClass("/")}>Latest</Link>
           <Link to="/archive" className={linkClass("/archive")}>Archive</Link>
+          <Link
+            to="/market"
+            className={`flex items-center gap-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.15em] transition-colors hover:text-primary ${
+              pathname === "/market" ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            <Activity className="h-3.5 w-3.5" />
+            Market
+          </Link>
           <Link
             to="/saved"
             className={`flex items-center gap-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.15em] transition-colors hover:text-primary ${

@@ -99,6 +99,33 @@ export type Database = {
           },
         ]
       }
+      incentive_status: {
+        Row: {
+          id: string
+          notes: string | null
+          program_name: string
+          state: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          notes?: string | null
+          program_name: string
+          state: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          notes?: string | null
+          program_name?: string
+          state?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       issues: {
         Row: {
           created_at: string
@@ -123,6 +150,36 @@ export type Database = {
           issue_number?: number
           week_end?: string
           week_start?: string
+        }
+        Relationships: []
+      }
+      market_metrics: {
+        Row: {
+          id: string
+          metric_name: string
+          notes: string | null
+          trend: string
+          unit: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          id?: string
+          metric_name: string
+          notes?: string | null
+          trend?: string
+          unit: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          id?: string
+          metric_name?: string
+          notes?: string | null
+          trend?: string
+          unit?: string
+          updated_at?: string
+          value?: number
         }
         Relationships: []
       }
