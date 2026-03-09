@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.generate-digest]
 verify_jwt = false
+
+[functions.eia-rates]
+verify_jwt = false
+
+[functions.pvwatts-states]
+verify_jwt = false
