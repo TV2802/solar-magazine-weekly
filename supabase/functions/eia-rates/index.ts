@@ -16,17 +16,9 @@ interface EIARecord {
 interface EIAResponse {
   response: {
     data: EIARecord[];
+    total: number;
   };
 }
-
-const STATE_NAMES: Record<string, string> = {
-  CA: "California",
-  NY: "New York",
-  TX: "Texas",
-  MA: "Massachusetts",
-  NJ: "New Jersey",
-  CO: "Colorado",
-};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -39,7 +31,8 @@ Deno.serve(async (req) => {
       throw new Error("EIA_API_KEY not configured");
     }
 
-    const url = `https://api.eia.gov/v2/electricity/retail-sales/data?api_key=${apiKey}&data[]=price&facets[sectorid][]=RES&facets[stateid][]=CA&facets[stateid][]=NY&facets[stateid][]=TX&facets[stateid][]=MA&facets[stateid][]=NJ&facets[stateid][]=CO&frequency=monthly&sort[0][column]=period&sort[0][direction]=desc&length=12`;
+    // Fetch all states, get enough records to cover 2 months for all ~51 state entries (including US/DC)
+    const url = `https://api.eia.gov/v2/electricity/retail-sales/data?api_key=${apiKey}&data[]=price&facets[sectorid][]=RES&frequency=monthly&sort[0][column]=period&sort[0][direction]=desc&length=120`;
 
     const res = await fetch(url);
     if (!res.ok) {
@@ -49,13 +42,11 @@ Deno.serve(async (req) => {
 
     const json: EIAResponse = await res.json();
     const data = json.response?.data ?? [];
-    
-    // Data is already filtered to RES sector by the API query
-    const residentialData = data;
 
     // Group by state and get latest 2 periods per state for trend calculation
     const byState: Record<string, EIARecord[]> = {};
-    for (const record of residentialData) {
+    for (const record of data) {
+      if (!record.stateid || record.stateid === "US") continue;
       if (!byState[record.stateid]) {
         byState[record.stateid] = [];
       }
@@ -68,54 +59,31 @@ Deno.serve(async (req) => {
       const current = records[0];
       const previous = records[1];
       let trend: "up" | "down" | "neutral" = "neutral";
-      if (current && previous) {
-        if (current.price > previous.price) trend = "up";
-        else if (current.price < previous.price) trend = "down";
+      if (current && previous && current.price != null && previous.price != null) {
+        const curPrice = parseFloat(String(current.price));
+        const prevPrice = parseFloat(String(previous.price));
+        if (curPrice > prevPrice) trend = "up";
+        else if (curPrice < prevPrice) trend = "down";
       }
       return {
         stateId,
-        stateName: STATE_NAMES[stateId] || stateId,
-        price: current?.price ?? null,
+        stateName: current?.stateDescription || stateId,
+        price: current?.price != null ? parseFloat(String(current.price)) : null,
         period: current?.period ?? "Data unavailable",
         trend,
       };
     });
 
-    // Fill in missing states if any
-    const finalRates = Object.entries(STATE_NAMES).map(([stateId, stateName]) => {
-      const existing = stateRates.find(r => r.stateId === stateId);
-      if (existing) return existing;
-      return {
-        stateId,
-        stateName,
-        price: null,
-        period: "Data unavailable",
-        trend: "neutral" as const,
-      };
-    });
+    stateRates.sort((a, b) => a.stateName.localeCompare(b.stateName));
 
-    // Sort by state name for consistent ordering
-    finalRates.sort((a, b) => a.stateName.localeCompare(b.stateName));
-
-    return new Response(JSON.stringify({ rates: finalRates, fetched_at: new Date().toISOString() }), {
+    return new Response(JSON.stringify({ rates: stateRates, fetched_at: new Date().toISOString() }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
     console.error("EIA fetch error:", error);
-    
-    // Fallback response instead of 500 error to gracefully handle UI
-    const fallbackRates = Object.entries(STATE_NAMES).map(([stateId, stateName]) => ({
-      stateId,
-      stateName,
-      price: null,
-      period: "Data unavailable",
-      trend: "neutral" as const
-    }));
-    
-    fallbackRates.sort((a, b) => a.stateName.localeCompare(b.stateName));
 
-    return new Response(JSON.stringify({ rates: fallbackRates, fetched_at: null, error: error.message }), {
-      status: 200, // Keep 200 so frontend doesn't crash on parse
+    return new Response(JSON.stringify({ rates: [], fetched_at: null, error: error.message }), {
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
