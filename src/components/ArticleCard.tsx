@@ -60,12 +60,15 @@ export function ArticleCard({ article, featured = false, onSelect }: ArticleCard
         style={{ borderLeftColor: `hsl(var(--energy-${token}))` }}
       >
         <div className="p-6 md:p-8">
-          <span
-            className="mb-4 inline-block font-mono text-[11px] font-medium uppercase tracking-[0.2em]"
-            style={{ color: `hsl(var(--energy-${token}))` }}
-          >
-            {config.emoji} {config.label}
-          </span>
+          <div className="mb-4 flex items-start justify-between">
+            <span
+              className="font-mono text-[11px] font-medium uppercase tracking-[0.2em]"
+              style={{ color: `hsl(var(--energy-${token}))` }}
+            >
+              {config.emoji} {config.label}
+            </span>
+            <BookmarkButton articleId={article.id} />
+          </div>
 
           <h2 className="mb-3 font-display text-2xl font-extrabold leading-[1.1] text-card-foreground md:text-4xl">
             {article.title}
@@ -96,6 +99,7 @@ export function ArticleCard({ article, featured = false, onSelect }: ArticleCard
         </div>
       </article>
     );
+
   }
 
   return (
