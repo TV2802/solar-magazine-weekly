@@ -1,16 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TrendingUp, TrendingDown, Minus, Activity, DollarSign, Zap, Clock } from "lucide-react";
 import { format } from "date-fns";
 import ElectricityRateMap from "@/components/ElectricityRateMap";
+import TrackedStatesTable from "@/components/TrackedStatesTable";
+import type { StateRate } from "@/components/ElectricityRateMap";
 
-interface StateRate {
-  stateId: string;
-  stateName: string;
-  price: number | null;
-  period: string;
-  trend: "up" | "down" | "neutral";
-}
+const DEFAULT_TRACKED = ["CA", "NY", "TX", "MA", "NJ", "CO"];
 
 interface MarketMetric {
   id: string;
@@ -56,6 +52,7 @@ export default function MarketIntelligence() {
   const [ratesFetched, setRatesFetched] = useState<string | null>(null);
   const [ratesLoading, setRatesLoading] = useState(true);
   const [ratesError, setRatesError] = useState<string | null>(null);
+  const [tracked, setTracked] = useState<Set<string>>(new Set(DEFAULT_TRACKED));
 
   const [metrics, setMetrics] = useState<MarketMetric[]>([]);
   const [metricsLoading, setMetricsLoading] = useState(true);
@@ -63,8 +60,16 @@ export default function MarketIntelligence() {
   const [incentives, setIncentives] = useState<IncentiveStatus[]>([]);
   const [incentivesLoading, setIncentivesLoading] = useState(true);
 
+  const handleToggleTracked = useCallback((abbr: string) => {
+    setTracked((prev) => {
+      const next = new Set(prev);
+      if (next.has(abbr)) next.delete(abbr);
+      else next.add(abbr);
+      return next;
+    });
+  }, []);
+
   useEffect(() => {
-    // Fetch EIA rates via edge function
     async function fetchRates() {
       setRatesLoading(true);
       try {
@@ -81,7 +86,6 @@ export default function MarketIntelligence() {
       }
     }
 
-    // Fetch market metrics
     async function fetchMetrics() {
       setMetricsLoading(true);
       const { data } = await supabase.from("market_metrics").select("*").order("metric_name");
@@ -89,7 +93,6 @@ export default function MarketIntelligence() {
       setMetricsLoading(false);
     }
 
-    // Fetch incentive status
     async function fetchIncentives() {
       setIncentivesLoading(true);
       const { data } = await supabase.from("incentive_status").select("*").order("state").order("program_name");
@@ -108,7 +111,6 @@ export default function MarketIntelligence() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      {/* Header */}
       <header className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
@@ -137,20 +139,35 @@ export default function MarketIntelligence() {
             </span>
           </div>
           <div className="rounded-lg border border-zinc-800 bg-zinc-900/80 p-4">
-            <ElectricityRateMap rates={stateRates} loading={ratesLoading} />
+            <ElectricityRateMap
+              rates={stateRates}
+              loading={ratesLoading}
+              tracked={tracked}
+              onToggleTracked={handleToggleTracked}
+            />
           </div>
           {ratesError && (
             <p className="mt-2 font-mono text-xs text-red-400">Note: {ratesError}</p>
           )}
         </section>
 
-        {/* Section 2: Weekly Benchmarks */}
+        {/* Section 2: Selected States Comparison Table */}
+        {!ratesLoading && (
+          <section>
+            <TrackedStatesTable
+              rates={stateRates}
+              tracked={tracked}
+              onRemove={handleToggleTracked}
+            />
+          </section>
+        )}
+
+        {/* Section 3: Weekly Benchmarks */}
         <section>
           <div className="mb-6 flex items-center gap-2">
             <DollarSign className="h-5 w-5 text-amber-400" />
             <h2 className="font-display text-xl font-bold text-zinc-50">Weekly Benchmarks</h2>
           </div>
-
           {metricsLoading ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {[...Array(5)].map((_, i) => (
@@ -160,14 +177,9 @@ export default function MarketIntelligence() {
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {metrics.map((m) => (
-                <div
-                  key={m.id}
-                  className="rounded-lg border border-zinc-800 bg-zinc-900/80 p-4 transition-colors hover:border-amber-500/30"
-                >
+                <div key={m.id} className="rounded-lg border border-zinc-800 bg-zinc-900/80 p-4 transition-colors hover:border-amber-500/30">
                   <div className="mb-2 flex items-center justify-between">
-                    <span className="font-mono text-xs uppercase tracking-wider text-zinc-400">
-                      Benchmark
-                    </span>
+                    <span className="font-mono text-xs uppercase tracking-wider text-zinc-400">Benchmark</span>
                     <TrendIcon trend={m.trend} className="h-4 w-4" />
                   </div>
                   <p className="mb-1 font-display text-sm font-semibold text-zinc-200">{m.metric_name}</p>
@@ -175,22 +187,19 @@ export default function MarketIntelligence() {
                     {m.value}
                     <span className="ml-1 text-sm font-normal text-zinc-500">{m.unit}</span>
                   </p>
-                  {m.notes && (
-                    <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-zinc-500">{m.notes}</p>
-                  )}
+                  {m.notes && <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-zinc-500">{m.notes}</p>}
                 </div>
               ))}
             </div>
           )}
         </section>
 
-        {/* Section 3: Incentive Program Status */}
+        {/* Section 4: Incentive Program Status */}
         <section>
           <div className="mb-6 flex items-center gap-2">
             <Activity className="h-5 w-5 text-amber-400" />
             <h2 className="font-display text-xl font-bold text-zinc-50">Incentive Program Status</h2>
           </div>
-
           {incentivesLoading ? (
             <div className="h-64 animate-pulse rounded-lg bg-zinc-800/50" />
           ) : (
@@ -198,18 +207,10 @@ export default function MarketIntelligence() {
               <table className="w-full min-w-[600px] text-left">
                 <thead className="border-b border-zinc-800 bg-zinc-900/50">
                   <tr>
-                    <th className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider text-zinc-500">
-                      Program
-                    </th>
-                    <th className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider text-zinc-500">
-                      State
-                    </th>
-                    <th className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider text-zinc-500">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider text-zinc-500">
-                      Notes
-                    </th>
+                    <th className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider text-zinc-500">Program</th>
+                    <th className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider text-zinc-500">State</th>
+                    <th className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider text-zinc-500">Status</th>
+                    <th className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider text-zinc-500">Notes</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800/50">
@@ -217,12 +218,8 @@ export default function MarketIntelligence() {
                     <tr key={inc.id} className="bg-zinc-900/30 transition-colors hover:bg-zinc-800/30">
                       <td className="px-4 py-3 font-mono text-sm text-zinc-200">{inc.program_name}</td>
                       <td className="px-4 py-3 font-mono text-sm text-zinc-400">{inc.state}</td>
-                      <td className="px-4 py-3">
-                        <StatusBadge status={inc.status} />
-                      </td>
-                      <td className="max-w-xs truncate px-4 py-3 text-xs text-zinc-500">
-                        {inc.notes || "—"}
-                      </td>
+                      <td className="px-4 py-3"><StatusBadge status={inc.status} /></td>
+                      <td className="max-w-xs truncate px-4 py-3 text-xs text-zinc-500">{inc.notes || "—"}</td>
                     </tr>
                   ))}
                 </tbody>
