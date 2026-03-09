@@ -45,7 +45,7 @@ export default function TrackedStatesTable({ rates, tracked, onRemove }: Props) 
         abbr,
         state: rate?.stateName || abbr,
         iso: iso?.name || "N/A",
-        isoHue: iso?.hue ?? 0,
+        isoColor: iso?.tracked ?? "#666",
         rate: price,
         diff,
         trend: rate?.trend || "neutral",
