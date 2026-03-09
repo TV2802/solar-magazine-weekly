@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Zap } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function SiteNav() {
   const { pathname } = useLocation();
@@ -16,9 +17,10 @@ export function SiteNav() {
           <Zap className="h-5 w-5 text-primary" />
           <span className="font-display text-lg font-bold tracking-tight">ENERGYPULSE</span>
         </Link>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
           <Link to="/" className={linkClass("/")}>Latest</Link>
           <Link to="/archive" className={linkClass("/archive")}>Archive</Link>
+          <ThemeToggle />
         </div>
       </div>
     </nav>

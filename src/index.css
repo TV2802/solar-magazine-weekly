@@ -58,13 +58,13 @@
   }
 
   .dark {
-    --background: 222 30% 8%;
+    --background: 213 36% 10%;
     --foreground: 210 20% 93%;
 
-    --card: 222 25% 12%;
+    --card: 213 30% 14%;
     --card-foreground: 210 20% 93%;
 
-    --popover: 222 25% 12%;
+    --popover: 213 30% 14%;
     --popover-foreground: 210 20% 93%;
 
     --primary: 45 100% 51%;
@@ -73,7 +73,7 @@
     --secondary: 160 84% 39%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 222 20% 18%;
+    --muted: 213 25% 18%;
     --muted-foreground: 215 15% 55%;
 
     --accent: 220 70% 55%;
@@ -82,8 +82,8 @@
     --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 222 20% 18%;
-    --input: 222 20% 18%;
+    --border: 213 25% 20%;
+    --input: 213 25% 20%;
     --ring: 45 100% 51%;
 
     --sidebar-background: 240 5.9% 10%;
@@ -99,11 +99,11 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border transition-colors duration-200;
   }
 
   body {
-    @apply bg-background text-foreground font-body antialiased;
+    @apply bg-background text-foreground font-body antialiased transition-colors duration-300;
   }
 
   h1, h2, h3, h4, h5, h6 {
