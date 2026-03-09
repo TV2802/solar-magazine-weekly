@@ -583,6 +583,27 @@ function categorize(title: string, summary: string, feedTopics: string[]): { top
   return { topic: bestTopic, score: bestScore };
 }
 
+function stripHtml(html: string): string {
+  if (!html) return "";
+  let text = html.replace(/<[^>]*>/g, "");
+  const entities: Record<string, string> = {
+    "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"',
+    "&#39;": "'", "&apos;": "'", "&nbsp;": " ",
+    "&rsquo;": "\u2019", "&lsquo;": "\u2018",
+    "&rdquo;": "\u201D", "&ldquo;": "\u201C",
+    "&mdash;": "\u2014", "&ndash;": "\u2013",
+    "&hellip;": "\u2026", "&bull;": "\u2022",
+    "&copy;": "\u00A9", "&reg;": "\u00AE",
+    "&trade;": "\u2122", "&deg;": "\u00B0",
+  };
+  for (const [entity, char] of Object.entries(entities)) {
+    text = text.replaceAll(entity, char);
+  }
+  text = text.replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)));
+  text = text.replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+  return text.replace(/\s+/g, " ").trim();
+}
+
 function extractText(xml: string, tag: string): string {
   const regex = new RegExp(`<${tag}[^>]*>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</${tag}>`, "i");
   const match = xml.match(regex);
