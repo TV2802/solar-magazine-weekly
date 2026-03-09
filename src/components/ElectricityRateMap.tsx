@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 
 const GEO_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
@@ -31,46 +31,85 @@ export const ABBR_TO_NAME: Record<string, string> = {
   VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
 };
 
-interface ISORegion {
+interface ISORegionDef {
   name: string;
-  hue: number;
+  base: string;
+  tracked: string;
   states: string[];
 }
 
-export const ISO_REGIONS: ISORegion[] = [
-  { name: "CAISO",     hue: 0,   states: ["CA"] },
-  { name: "ERCOT",     hue: 220, states: ["TX"] },
-  { name: "NYISO",     hue: 270, states: ["NY"] },
-  { name: "ISO-NE",    hue: 30,  states: ["MA", "CT", "RI", "VT", "NH", "ME"] },
-  { name: "PJM",       hue: 140, states: ["NJ", "PA", "MD", "DE", "OH", "IN", "IL", "MI", "WV", "VA", "DC"] },
-  { name: "MISO",      hue: 175, states: ["MN", "IA", "WI", "ND", "SD", "MO", "AR", "MS", "LA"] },
-  { name: "SPP",       hue: 50,  states: ["KS", "OK", "NE", "WY"] },
-  { name: "WECC",      hue: 330, states: ["CO", "NV", "UT", "AZ", "OR", "WA", "ID", "NM", "MT"] },
-  { name: "Southeast", hue: 190, states: ["FL", "GA", "AL", "SC", "NC", "TN", "KY"] },
-  { name: "Other",     hue: 260, states: ["AK", "HI"] },
+export const ISO_REGIONS: ISORegionDef[] = [
+  { name: "CAISO",     base: "#4a1520", tracked: "#c0392b", states: ["CA"] },
+  { name: "ERCOT",     base: "#0d2137", tracked: "#1a6fa8", states: ["TX"] },
+  { name: "NYISO",     base: "#1e1040", tracked: "#6c3dbf", states: ["NY"] },
+  { name: "ISO-NE",    base: "#0d2e2e", tracked: "#17a589", states: ["MA", "CT", "RI", "VT", "NH", "ME"] },
+  { name: "PJM",       base: "#0d2b1a", tracked: "#1e8449", states: ["NJ", "PA", "MD", "DE", "OH", "IN", "IL", "MI", "WV", "VA", "DC"] },
+  { name: "MISO",      base: "#1a2535", tracked: "#2e86c1", states: ["MN", "IA", "WI", "ND", "SD", "MO", "AR", "MS", "LA"] },
+  { name: "SPP",       base: "#1e2010", tracked: "#7d8c2a", states: ["KS", "OK", "NE", "WY"] },
+  { name: "WECC",      base: "#2a1020", tracked: "#8e44ad", states: ["CO", "NV", "UT", "AZ", "OR", "WA", "ID", "NM", "MT"] },
+  { name: "Southeast", base: "#1e1508", tracked: "#ca6f1e", states: ["FL", "GA", "AL", "SC", "NC", "TN", "KY"] },
+  { name: "Other",     base: "#1a1a2a", tracked: "#666688", states: ["AK", "HI"] },
 ];
 
-export const STATE_TO_ISO: Record<string, ISORegion> = {};
+export const STATE_TO_ISO: Record<string, ISORegionDef> = {};
 for (const region of ISO_REGIONS) {
   for (const st of region.states) {
     STATE_TO_ISO[st] = region;
   }
 }
 
-function getISOColor(abbr: string, price: number | null, minPrice: number, maxPrice: number): string {
-  const region = STATE_TO_ISO[abbr];
-  if (!region) return "#27272a";
-  const hue = region.hue;
-  if (price == null) return `hsl(${hue}, 15%, 18%)`;
-  const range = maxPrice - minPrice || 1;
-  const t = (price - minPrice) / range;
-  const saturation = 30 + t * 50;
-  const lightness = 20 + t * 30;
-  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+// Special overrides for AK and HI
+const STATE_BASE_OVERRIDE: Record<string, string> = {
+  AK: "#351428", // WECC slightly lighter
+  HI: "#5a1d28", // CAISO slightly lighter
+};
+const STATE_TRACKED_OVERRIDE: Record<string, string> = {
+  AK: "#8e44ad",
+  HI: "#c0392b",
+};
+
+// Parse hex to [r,g,b]
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace("#", "");
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
 }
 
-export function getISOLegendColor(hue: number): string {
-  return `hsl(${hue}, 65%, 45%)`;
+function rgbToHex(r: number, g: number, b: number): string {
+  const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
+  return `#${clamp(r).toString(16).padStart(2, "0")}${clamp(g).toString(16).padStart(2, "0")}${clamp(b).toString(16).padStart(2, "0")}`;
+}
+
+function adjustBrightness(hex: string, factor: number): string {
+  const [r, g, b] = hexToRgb(hex);
+  return rgbToHex(r * factor, g * factor, b * factor);
+}
+
+function getStateColor(
+  abbr: string,
+  isTracked: boolean,
+  price: number | null,
+  minPrice: number,
+  maxPrice: number
+): string {
+  const region = STATE_TO_ISO[abbr];
+  if (!region) return "#18181b";
+
+  if (isTracked) {
+    return STATE_TRACKED_OVERRIDE[abbr] || region.tracked;
+  }
+
+  const baseColor = STATE_BASE_OVERRIDE[abbr] || region.base;
+  if (price == null) return adjustBrightness(baseColor, 0.85);
+
+  const range = maxPrice - minPrice || 1;
+  const t = (price - minPrice) / range; // 0=cheapest, 1=most expensive
+  // vary ±15% around base: factor from 0.85 to 1.15
+  const factor = 0.85 + t * 0.30;
+  return adjustBrightness(baseColor, factor);
+}
+
+export function getISOLegendColor(region: ISORegionDef): string {
+  return region.tracked;
 }
 
 export interface StateRate {
@@ -145,28 +184,21 @@ export default function ElectricityRateMap({ rates, loading, tracked, onToggleTr
                 if (!abbr) return null;
                 const rate = rateMap[abbr];
                 const price = rate?.price != null ? parseFloat(String(rate.price)) : null;
-                const fillColor = getISOColor(abbr, price, min, max);
                 const isTracked = tracked.has(abbr);
+                const fillColor = getStateColor(abbr, isTracked, price, min, max);
                 const stateName = rate?.stateName || ABBR_TO_NAME[abbr] || abbr;
                 const isoRegion = STATE_TO_ISO[abbr];
-
-                let strokeColor = "#52525b";
-                let strokeW = 0.75;
-                if (isTracked) {
-                  strokeColor = "#f59e0b";
-                  strokeW = 2;
-                }
 
                 return (
                   <Geography
                     key={geo.rsmKey}
                     geography={geo}
                     fill={fillColor}
-                    stroke={strokeColor}
-                    strokeWidth={strokeW}
+                    stroke={isTracked ? "#f59e0b" : "#ffffff15"}
+                    strokeWidth={isTracked ? 2 : 0.75}
                     style={{
                       default: { outline: "none" },
-                      hover: { outline: "none", fill: fillColor, filter: "brightness(1.4)", cursor: "pointer" },
+                      hover: { outline: "none", fill: fillColor, filter: "brightness(1.3)", cursor: "pointer" },
                       pressed: { outline: "none" },
                     }}
                     onMouseEnter={(evt) => {
@@ -220,7 +252,10 @@ export default function ElectricityRateMap({ rates, loading, tracked, onToggleTr
       <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
         {ISO_REGIONS.filter((r) => r.name !== "Other").map((region) => (
           <span key={region.name} className="flex items-center gap-1.5 font-mono text-[10px] text-zinc-400">
-            <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: getISOLegendColor(region.hue) }} />
+            <span
+              className="inline-block h-2.5 w-2.5 rounded-sm"
+              style={{ backgroundColor: region.tracked }}
+            />
             {region.name}
           </span>
         ))}
