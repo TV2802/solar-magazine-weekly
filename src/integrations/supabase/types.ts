@@ -54,6 +54,7 @@ export type Database = {
           is_featured: boolean
           issue_id: string | null
           published_at: string | null
+          relevance_score: number | null
           source_name: string | null
           source_url: string
           summary: string | null
@@ -67,6 +68,7 @@ export type Database = {
           is_featured?: boolean
           issue_id?: string | null
           published_at?: string | null
+          relevance_score?: number | null
           source_name?: string | null
           source_url: string
           summary?: string | null
@@ -80,6 +82,7 @@ export type Database = {
           is_featured?: boolean
           issue_id?: string | null
           published_at?: string | null
+          relevance_score?: number | null
           source_name?: string | null
           source_url?: string
           summary?: string | null
