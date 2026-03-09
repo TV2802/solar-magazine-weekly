@@ -5,6 +5,7 @@ import { X, ExternalLink, Clock } from "lucide-react";
 import { format } from "date-fns";
 import type { Article } from "@/hooks/useArticles";
 import { TOPIC_CONFIG } from "@/lib/topics";
+import { stripHtml } from "@/lib/utils";
 
 interface ArticleDrawerProps {
   article: Article | null;

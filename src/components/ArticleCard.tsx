@@ -4,6 +4,7 @@ import { Clock } from "lucide-react";
 import type { Article } from "@/hooks/useArticles";
 import type { Database } from "@/integrations/supabase/types";
 import { format } from "date-fns";
+import { stripHtml } from "@/lib/utils";
 
 type TopicCategory = Database["public"]["Enums"]["topic_category"];
 
