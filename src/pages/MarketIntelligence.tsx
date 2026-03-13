@@ -53,6 +53,10 @@ export default function MarketIntelligence() {
   const [ratesLoading, setRatesLoading] = useState(true);
   const [ratesError, setRatesError] = useState<string | null>(null);
   const [tracked, setTracked] = useState<Set<string>>(new Set(DEFAULT_TRACKED));
+  const [layers, setLayers] = useState<Layers>({ rates: true, solar: false, index: false });
+  const [solarData, setSolarData] = useState<SolarData[]>([]);
+  const [solarLoading, setSolarLoading] = useState(false);
+  const [solarFetched, setSolarFetched] = useState(false);
 
   const [metrics, setMetrics] = useState<MarketMetric[]>([]);
   const [metricsLoading, setMetricsLoading] = useState(true);
