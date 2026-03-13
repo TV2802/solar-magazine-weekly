@@ -110,6 +110,8 @@ export default function MarketIntelligence() {
 
     async function fetchMetrics() {
       setMetricsLoading(true);
+      // Trigger ATB benchmarks upsert (cached for 30 days), then read market_metrics
+      await supabase.functions.invoke("atb-benchmarks").catch(() => {});
       const { data } = await supabase.from("market_metrics").select("*").order("metric_name");
       if (data) setMetrics(data as MarketMetric[]);
       setMetricsLoading(false);
