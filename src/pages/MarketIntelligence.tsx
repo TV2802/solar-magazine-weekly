@@ -5,7 +5,6 @@ import { format } from "date-fns";
 import ElectricityRateMap from "@/components/ElectricityRateMap";
 import TrackedStatesTable from "@/components/TrackedStatesTable";
 import BenchmarkDashboard from "@/components/BenchmarkDashboard";
-import BenchmarkDashboard from "@/components/BenchmarkDashboard";
 import type { StateRate, Layers, LayerKey, SolarData } from "@/components/ElectricityRateMap";
 
 const DEFAULT_TRACKED = ["CA", "NY", "TX", "MA", "NJ", "CO"];
@@ -168,8 +167,6 @@ export default function MarketIntelligence() {
         {/* Section 3: Cost Benchmarks */}
         <BenchmarkDashboard />
 
-        {/* Section 4: DC & FEOC Compliance */}
-<ComplianceTracker />
         {/* Section 4: Incentive Program Status */}
         <section>
           <div className="mb-6 flex items-center gap-2">
