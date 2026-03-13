@@ -245,7 +245,7 @@ export default function BenchmarkDashboard() {
                     <div className="flex gap-4 font-mono text-[10px] text-zinc-500">
                       <span className="flex items-center gap-1"><span className="inline-block h-2 w-4 rounded" style={{background:"#F59E0B"}} />SEIA/WoodMac</span>
                       <span className="flex items-center gap-1"><span className="inline-block h-2 w-4 rounded" style={{background:"#1D9E75"}} />LBL</span>
-                      <span className="flex items-center gap-1"><span className="inline-block h-[2px] w-4 border-t-2 border-dashed border-zinc-400"} />NREL ATB</span>
+                      <span className="flex items-center gap-1"><span className="inline-block h-[2px] w-4 border-t-2 border-dashed border-zinc-400" />NREL ATB</span>
                     </div>
                   </div>
                   <ResponsiveContainer width="100%" height={200}>
@@ -315,7 +315,7 @@ export default function BenchmarkDashboard() {
                   <div className="flex gap-4 font-mono text-[10px] text-zinc-500">
                     <span className="flex items-center gap-1"><span className="inline-block h-2 w-4 rounded" style={{background:"#F59E0B"}} />SEIA/WoodMac</span>
                     <span className="flex items-center gap-1"><span className="inline-block h-2 w-4 rounded" style={{background:"#1D9E75"}} />LBL</span>
-                    <span className="flex items-center gap-1"><span className="inline-block h-[2px] w-4 border-t-2 border-dashed border-zinc-400"} />NREL ATB</span>
+                    <span className="flex items-center gap-1"><span className="inline-block h-[2px] w-4 border-t-2 border-dashed border-zinc-400" />NREL ATB</span>
                   </div>
                 </div>
                 <ResponsiveContainer width="100%" height={220}>
