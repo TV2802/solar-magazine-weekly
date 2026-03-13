@@ -73,6 +73,24 @@ export default function MarketIntelligence() {
     });
   }, []);
 
+  const handleToggleLayer = useCallback((key: LayerKey) => {
+    setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
+
+  // Fetch solar data when solar or index layer is toggled on
+  useEffect(() => {
+    if ((layers.solar || layers.index) && !solarFetched) {
+      setSolarLoading(true);
+      supabase.functions.invoke("pvwatts-states").then(({ data, error }) => {
+        if (!error && data?.data) {
+          setSolarData(data.data);
+        }
+        setSolarFetched(true);
+        setSolarLoading(false);
+      });
+    }
+  }, [layers.solar, layers.index, solarFetched]);
+
   useEffect(() => {
     async function fetchRates() {
       setRatesLoading(true);
