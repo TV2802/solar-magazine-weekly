@@ -108,16 +108,16 @@ export interface StateRate {
   trend: "up" | "down" | "neutral";
 }
 
-interface SolarData {
+export interface SolarData {
   state_id: string;
   state_name: string;
   ac_annual: number | null;
   capacity_factor: number | null;
 }
 
-type LayerKey = "rates" | "solar" | "index";
+export type LayerKey = "rates" | "solar" | "index";
 
-interface Layers {
+export interface Layers {
   rates: boolean;
   solar: boolean;
   index: boolean;
