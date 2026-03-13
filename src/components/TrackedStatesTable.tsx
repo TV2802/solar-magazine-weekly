@@ -75,7 +75,7 @@ export default function TrackedStatesTable({ rates, tracked, onRemove, layers, s
       const solar = solarMap[abbr];
       if (rate?.price != null && solar?.ac_annual != null) {
         const normR = (rate.price - minP) / rangeP;
-        const normS = (solar.ac_annual - minS) / rangeS;
+        const normS = (solar.ac_annual / 10 - minS) / rangeS;
         m[abbr] = Math.round(normR * normS * 100);
       }
     }
