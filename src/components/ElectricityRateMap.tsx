@@ -202,8 +202,8 @@ export default function ElectricityRateMap({ rates, loading, tracked, onToggleTr
       const solar = solarMap[abbr];
       if (rate?.price != null && solar?.ac_annual != null) {
         const normRate = (rate.price - minPrice) / priceRange;
-        const normSolar = (solar.ac_annual - minSolar) / solarRange;
-        m[abbr] = normRate * normSolar;
+        const acNorm = (solar.ac_annual / 10 - minSolar) / solarRange;
+        m[abbr] = normRate * acNorm;
       }
     }
     return m;
