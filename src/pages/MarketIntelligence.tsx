@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import ElectricityRateMap from "@/components/ElectricityRateMap";
 import TrackedStatesTable from "@/components/TrackedStatesTable";
 import BenchmarkDashboard from "@/components/BenchmarkDashboard";
+import ComplianceTracker from "@/components/ComplianceTracker";
 import type { StateRate, Layers, LayerKey, SolarData } from "@/components/ElectricityRateMap";
 
 const DEFAULT_TRACKED = ["CA", "NY", "TX", "MA", "NJ", "CO"];
