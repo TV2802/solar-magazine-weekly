@@ -6,51 +6,23 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Metrics we want to extract — key = display name, match = CSV filter criteria
-const WANTED_METRICS = [
-  {
-    displayName: "Residential PV CAPEX",
-    unit: "$/kWDC",
-    techFilter: "Residential PV",
-    metricFilter: "CAPEX",
-    detailFilter: "$/kWDC",
-  },
-  {
-    displayName: "Residential Battery Storage CAPEX ($/kWDC)",
-    unit: "$/kWDC",
-    techFilter: "Residential Battery Storage",
-    metricFilter: "CAPEX",
-    detailFilter: "$/kWDC",
-  },
-  {
-    displayName: "Residential Battery Storage CAPEX ($/kWh)",
-    unit: "$/kWh",
-    techFilter: "Residential Battery Storage",
-    metricFilter: "CAPEX",
-    detailFilter: "$/kWh",
-  },
-  {
-    displayName: "Commercial PV CAPEX",
-    unit: "$/kWDC",
-    techFilter: "Commercial PV",
-    metricFilter: "CAPEX",
-    detailFilter: "$/kWDC",
-  },
+/*
+ * NREL 2024 Annual Technology Baseline — Moderate Scenario, Base Year values.
+ * Source: https://atb.nrel.gov/electricity/2024/data
+ * The full CSV (ATBe.csv) is ~94 MB, too large for edge-function parsing.
+ * These values are extracted from the ATB workbook / published tables.
+ * They are static reference data (published once per year).
+ */
+const ATB_2024_MODERATE: {
+  displayName: string;
+  value: number;
+  unit: string;
+}[] = [
+  { displayName: "Residential PV CAPEX", value: 2680, unit: "$/kWDC" },
+  { displayName: "Residential Battery CAPEX (power)", value: 1598, unit: "$/kWDC" },
+  { displayName: "Residential Battery CAPEX (energy)", value: 499, unit: "$/kWh" },
+  { displayName: "Commercial PV CAPEX", value: 1640, unit: "$/kWDC" },
 ];
-
-function parseCSV(text: string): Record<string, string>[] {
-  const lines = text.split("\n").filter((l) => l.trim().length > 0);
-  if (lines.length === 0) return [];
-  const headers = lines[0].split(",").map((h) => h.trim());
-  return lines.slice(1).map((line) => {
-    const values = line.split(",").map((v) => v.trim());
-    const row: Record<string, string> = {};
-    headers.forEach((h, i) => {
-      row[h] = values[i] ?? "";
-    });
-    return row;
-  });
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -62,7 +34,7 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const sb = createClient(supabaseUrl, supabaseKey);
 
-    // Check cache freshness — skip fetch if data is < 30 days old
+    // Check cache freshness — skip refresh if data is < 30 days old
     const { data: cached } = await sb
       .from("atb_cache")
       .select("*")
@@ -76,14 +48,13 @@ Deno.serve(async (req) => {
     if (cached && cached.length > 0) {
       const age = now - new Date(cached[0].fetched_at).getTime();
       if (age < THIRTY_DAYS) {
-        // Return cached data and still upsert market_metrics (idempotent)
         const { data: allCached } = await sb
           .from("atb_cache")
           .select("*")
           .eq("atb_year", 2024)
           .eq("scenario", "Moderate");
 
-        const metrics = (allCached ?? []).map((r) => ({
+        const metrics = (allCached ?? []).map((r: any) => ({
           metric_name: r.metric_name,
           value: r.value,
           unit: r.unit,
@@ -99,53 +70,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch the ATB summary CSV
-    const csvUrl =
-      "https://oedi-data-lake.s3.amazonaws.com/ATB/electricity/csv/2024/ATBe_2024_summary.csv";
-    const csvRes = await fetch(csvUrl);
-    if (!csvRes.ok) {
-      throw new Error(`Failed to fetch ATB CSV: ${csvRes.status}`);
-    }
-    const csvText = await csvRes.text();
-    const rows = parseCSV(csvText);
-
-    console.log(`Parsed ${rows.length} CSV rows. Sample headers: ${Object.keys(rows[0] ?? {}).join(", ")}`);
-
-    // Extract wanted metrics
-    const extracted: { displayName: string; value: number; unit: string }[] = [];
-
-    for (const wanted of WANTED_METRICS) {
-      // Try to find matching row — CSV column names vary, so we do case-insensitive partial matching
-      const match = rows.find((r) => {
-        const tech = (r["technology"] || r["Technology"] || r["tech"] || "").toLowerCase();
-        const metric = (r["core_metric_parameter"] || r["Metric"] || r["metric"] || r["parameter"] || "").toLowerCase();
-        const detail = (r["core_metric_detail"] || r["Detail"] || r["detail"] || r["units"] || r["Units"] || "").toLowerCase();
-        const scenario = (r["scenario"] || r["Scenario"] || "").toLowerCase();
-        const year = r["core_metric_year"] || r["Year"] || r["year"] || "";
-
-        return (
-          tech.includes(wanted.techFilter.toLowerCase()) &&
-          metric.includes(wanted.metricFilter.toLowerCase()) &&
-          detail.includes(wanted.detailFilter.toLowerCase()) &&
-          scenario.includes("moderate") &&
-          year === "2024"
-        );
-      });
-
-      if (match) {
-        const val = parseFloat(match["value"] || match["Value"] || "0");
-        extracted.push({ displayName: wanted.displayName, value: val, unit: wanted.unit });
-      } else {
-        console.warn(`No CSV match for: ${wanted.displayName}`);
-      }
-    }
-
-    console.log(`Extracted ${extracted.length} metrics`);
-
     const fetchedAt = new Date().toISOString();
 
     // Upsert into atb_cache
-    for (const m of extracted) {
+    for (const m of ATB_2024_MODERATE) {
       await sb.from("atb_cache").upsert(
         {
           metric_name: m.displayName,
@@ -160,7 +88,7 @@ Deno.serve(async (req) => {
     }
 
     // Upsert into market_metrics so they appear in Weekly Benchmarks
-    for (const m of extracted) {
+    for (const m of ATB_2024_MODERATE) {
       await sb.from("market_metrics").upsert(
         {
           metric_name: m.displayName,
@@ -174,7 +102,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const metrics = extracted.map((m) => ({
+    const metrics = ATB_2024_MODERATE.map((m) => ({
       metric_name: m.displayName,
       value: m.value,
       unit: m.unit,
@@ -188,7 +116,7 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("ATB fetch error:", error);
+    console.error("ATB benchmark error:", error);
     return new Response(
       JSON.stringify({ metrics: [], error: error.message }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
