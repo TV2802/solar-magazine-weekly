@@ -61,7 +61,7 @@ export default function TrackedStatesTable({ rates, tracked, onRemove, layers, s
   // Compute opportunity scores (0-100)
   const opportunityScores = useMemo(() => {
     const prices = rates.filter((r) => r.price != null).map((r) => r.price as number);
-    const solars = solarData.filter((s) => s.ac_annual != null).map((s) => s.ac_annual as number);
+    const solars = solarData.filter((s) => s.ac_annual != null).map((s) => (s.ac_annual as number) / 10);
     if (!prices.length || !solars.length) return {};
 
     const minP = Math.min(...prices), maxP = Math.max(...prices);
@@ -75,7 +75,7 @@ export default function TrackedStatesTable({ rates, tracked, onRemove, layers, s
       const solar = solarMap[abbr];
       if (rate?.price != null && solar?.ac_annual != null) {
         const normR = (rate.price - minP) / rangeP;
-        const normS = (solar.ac_annual - minS) / rangeS;
+        const normS = (solar.ac_annual / 10 - minS) / rangeS;
         m[abbr] = Math.round(normR * normS * 100);
       }
     }
@@ -99,7 +99,7 @@ export default function TrackedStatesTable({ rates, tracked, onRemove, layers, s
         diff,
         trend: rate?.trend || "neutral",
         period: rate?.period || "N/A",
-        solarKwh: solar?.ac_annual ?? null,
+        solarKwh: solar?.ac_annual != null ? solar.ac_annual / 10 : null,
         opportunity: opportunityScores[abbr] ?? null,
       };
     });
@@ -135,7 +135,7 @@ export default function TrackedStatesTable({ rates, tracked, onRemove, layers, s
 
   const exportCSV = useCallback(() => {
     const cols = ["State", "ISO Region", "Rate (¢/kWh)", "vs US Avg", "Trend", "Last Updated"];
-    if (layers.solar) cols.push("Solar Production (kWh/yr)");
+    if (layers.solar) cols.push("Avg Yield (kWh/yr)");
     if (layers.index) cols.push("Opportunity Index");
     const header = cols.join(",");
     const csvRows = sorted.map((r) => {
@@ -198,7 +198,7 @@ export default function TrackedStatesTable({ rates, tracked, onRemove, layers, s
             <SortHeader label="vs US Avg" k="diff" />
             <SortHeader label="Trend" k="trend" />
             {layers.solar && (
-              <SortHeader label="Solar (kWh/yr)" k="solar" className={colTransition} />
+              <SortHeader label="Avg Yield (kWh/yr)" k="solar" className={colTransition} />
             )}
             {layers.index && (
               <SortHeader label="Opportunity Index" k="opportunity" className={colTransition} />

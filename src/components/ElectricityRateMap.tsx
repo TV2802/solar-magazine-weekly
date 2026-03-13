@@ -154,13 +154,13 @@ function TrendArrow({ trend }: { trend: string }) {
 
 const LAYER_PILLS: { key: LayerKey; label: string }[] = [
   { key: "rates", label: "⚡ Electricity Rates" },
-  { key: "solar", label: "☀️ Solar Production" },
+  { key: "solar", label: "☀️ Avg Yield" },
   { key: "index", label: "📊 Rate × Solar Index" },
 ];
 
 const SUBTITLES: Record<LayerKey, string> = {
   rates: "Brightness = rate intensity · Click any state to track/untrack",
-  solar: "Brightness = annual solar production (kWh) · Click any state to track/untrack",
+  solar: "Brightness = avg yield per 1 kW (kWh/yr) · Click any state to track/untrack",
   index: "Green = highest opportunity (high rate × high solar) · Click any state to track/untrack",
 };
 
@@ -187,8 +187,8 @@ export default function ElectricityRateMap({ rates, loading, tracked, onToggleTr
   }, [rates]);
 
   const { minSolar, maxSolar } = useMemo(() => {
-    const vals = solarData.filter((s) => s.ac_annual != null).map((s) => s.ac_annual as number);
-    if (!vals.length) return { minSolar: 0, maxSolar: 20000 };
+    const vals = solarData.filter((s) => s.ac_annual != null).map((s) => (s.ac_annual as number) / 10);
+    if (!vals.length) return { minSolar: 0, maxSolar: 2000 };
     return { minSolar: Math.min(...vals), maxSolar: Math.max(...vals) };
   }, [solarData]);
 
@@ -202,8 +202,8 @@ export default function ElectricityRateMap({ rates, loading, tracked, onToggleTr
       const solar = solarMap[abbr];
       if (rate?.price != null && solar?.ac_annual != null) {
         const normRate = (rate.price - minPrice) / priceRange;
-        const normSolar = (solar.ac_annual - minSolar) / solarRange;
-        m[abbr] = normRate * normSolar;
+        const acNorm = (solar.ac_annual / 10 - minSolar) / solarRange;
+        m[abbr] = normRate * acNorm;
       }
     }
     return m;
@@ -228,7 +228,7 @@ export default function ElectricityRateMap({ rates, loading, tracked, onToggleTr
         const ac = solarMap[abbr]?.ac_annual;
         if (ac == null) return adjustBrightness(baseColor, 0.6);
         const range = maxSolar - minSolar || 1;
-        const t = (ac - minSolar) / range;
+        const t = (ac / 10 - minSolar) / range;
         return adjustBrightness(baseColor, 0.7 + t * 0.6);
       }
 
@@ -340,7 +340,7 @@ export default function ElectricityRateMap({ rates, loading, tracked, onToggleTr
                             x: evt.clientX, y: evt.clientY,
                             name: stateName, iso: isoRegion?.name || "N/A",
                             price, trend: rate?.trend || "neutral", period: rate?.period || "No data",
-                            acAnnual: solar?.ac_annual ?? null,
+                            acAnnual: solar?.ac_annual != null ? solar.ac_annual / 10 : null,
                             opportunityIndex: opp,
                           });
                         }}
@@ -455,7 +455,7 @@ export default function ElectricityRateMap({ rates, loading, tracked, onToggleTr
             )}
             {layers.solar && (
               <p className="font-mono text-xs text-zinc-300">
-                ☀️ Solar:{" "}
+                ☀️ Avg Yield:{" "}
                 <span className="font-bold text-yellow-300">
                   {tooltip.acAnnual != null ? `${Math.round(tooltip.acAnnual).toLocaleString()} kWh/yr` : "N/A"}
                 </span>
