@@ -1,15 +1,17 @@
 import { useMemo, useState, useCallback } from "react";
 import { TrendingUp, TrendingDown, Minus, X, ArrowUpDown, Download } from "lucide-react";
 import { STATE_TO_ISO } from "./ElectricityRateMap";
-import type { StateRate } from "./ElectricityRateMap";
+import type { StateRate, Layers, SolarData } from "./ElectricityRateMap";
 
 interface Props {
   rates: StateRate[];
   tracked: Set<string>;
   onRemove: (abbr: string) => void;
+  layers: Layers;
+  solarData: SolarData[];
 }
 
-type SortKey = "state" | "iso" | "rate" | "diff" | "trend" | "period";
+type SortKey = "state" | "iso" | "rate" | "diff" | "trend" | "period" | "solar" | "opportunity";
 type SortDir = "asc" | "desc";
 
 const TrendIcon = ({ trend }: { trend: string }) => {
@@ -18,7 +20,23 @@ const TrendIcon = ({ trend }: { trend: string }) => {
   return <Minus className="inline h-3.5 w-3.5 text-zinc-500" />;
 };
 
-export default function TrackedStatesTable({ rates, tracked, onRemove }: Props) {
+function OpportunityBar({ score }: { score: number }) {
+  const color = score >= 66 ? "bg-green-500" : score >= 33 ? "bg-yellow-500" : "bg-red-500";
+  const textColor = score >= 66 ? "text-green-400" : score >= 33 ? "text-yellow-400" : "text-red-400";
+  return (
+    <div className="flex items-center gap-2">
+      <span className={`font-mono text-sm font-bold tabular-nums ${textColor}`}>{score}</span>
+      <div className="h-2 w-16 overflow-hidden rounded-full bg-zinc-800">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${color}`}
+          style={{ width: `${score}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+export default function TrackedStatesTable({ rates, tracked, onRemove, layers, solarData }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("rate");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
@@ -28,11 +46,41 @@ export default function TrackedStatesTable({ rates, tracked, onRemove }: Props) 
     return m;
   }, [rates]);
 
+  const solarMap = useMemo(() => {
+    const m: Record<string, SolarData> = {};
+    for (const s of solarData) m[s.state_id] = s;
+    return m;
+  }, [solarData]);
+
   const usAvg = useMemo(() => {
     const prices = rates.filter((r) => r.price != null).map((r) => r.price as number);
     if (!prices.length) return null;
     return prices.reduce((a, b) => a + b, 0) / prices.length;
   }, [rates]);
+
+  // Compute opportunity scores (0-100)
+  const opportunityScores = useMemo(() => {
+    const prices = rates.filter((r) => r.price != null).map((r) => r.price as number);
+    const solars = solarData.filter((s) => s.ac_annual != null).map((s) => s.ac_annual as number);
+    if (!prices.length || !solars.length) return {};
+
+    const minP = Math.min(...prices), maxP = Math.max(...prices);
+    const minS = Math.min(...solars), maxS = Math.max(...solars);
+    const rangeP = maxP - minP || 1;
+    const rangeS = maxS - minS || 1;
+
+    const m: Record<string, number> = {};
+    for (const abbr of Object.keys(rateMap)) {
+      const rate = rateMap[abbr];
+      const solar = solarMap[abbr];
+      if (rate?.price != null && solar?.ac_annual != null) {
+        const normR = (rate.price - minP) / rangeP;
+        const normS = (solar.ac_annual - minS) / rangeS;
+        m[abbr] = Math.round(normR * normS * 100);
+      }
+    }
+    return m;
+  }, [rates, solarData, rateMap, solarMap]);
 
   const rows = useMemo(() => {
     const trackedArr = Array.from(tracked);
@@ -41,6 +89,7 @@ export default function TrackedStatesTable({ rates, tracked, onRemove }: Props) 
       const price = rate?.price != null ? parseFloat(String(rate.price)) : null;
       const iso = STATE_TO_ISO[abbr];
       const diff = price != null && usAvg != null ? price - usAvg : null;
+      const solar = solarMap[abbr];
       return {
         abbr,
         state: rate?.stateName || abbr,
@@ -50,9 +99,11 @@ export default function TrackedStatesTable({ rates, tracked, onRemove }: Props) 
         diff,
         trend: rate?.trend || "neutral",
         period: rate?.period || "N/A",
+        solarKwh: solar?.ac_annual ?? null,
+        opportunity: opportunityScores[abbr] ?? null,
       };
     });
-  }, [tracked, rateMap, usAvg]);
+  }, [tracked, rateMap, usAvg, solarMap, opportunityScores]);
 
   const sorted = useMemo(() => {
     const copy = [...rows];
@@ -65,6 +116,8 @@ export default function TrackedStatesTable({ rates, tracked, onRemove }: Props) 
         case "diff": cmp = (a.diff ?? -999) - (b.diff ?? -999); break;
         case "trend": cmp = a.trend.localeCompare(b.trend); break;
         case "period": cmp = a.period.localeCompare(b.period); break;
+        case "solar": cmp = (a.solarKwh ?? -1) - (b.solarKwh ?? -1); break;
+        case "opportunity": cmp = (a.opportunity ?? -1) - (b.opportunity ?? -1); break;
       }
       return sortDir === "desc" ? -cmp : cmp;
     });
@@ -81,11 +134,17 @@ export default function TrackedStatesTable({ rates, tracked, onRemove }: Props) 
   }, [sortKey]);
 
   const exportCSV = useCallback(() => {
-    const header = "State,ISO Region,Rate (¢/kWh),vs US Avg,Trend,Last Updated";
+    const cols = ["State", "ISO Region", "Rate (¢/kWh)", "vs US Avg", "Trend", "Last Updated"];
+    if (layers.solar) cols.push("Solar Production (kWh/yr)");
+    if (layers.index) cols.push("Opportunity Index");
+    const header = cols.join(",");
     const csvRows = sorted.map((r) => {
       const rateStr = r.rate != null ? r.rate.toFixed(2) : "N/A";
       const diffStr = r.diff != null ? (r.diff >= 0 ? `+${r.diff.toFixed(2)}` : r.diff.toFixed(2)) : "N/A";
-      return `"${r.state}","${r.iso}",${rateStr},${diffStr},${r.trend},${r.period}`;
+      const parts = [`"${r.state}"`, `"${r.iso}"`, rateStr, diffStr, r.trend, r.period];
+      if (layers.solar) parts.push(r.solarKwh != null ? Math.round(r.solarKwh).toString() : "N/A");
+      if (layers.index) parts.push(r.opportunity != null ? r.opportunity.toString() : "N/A");
+      return parts.join(",");
     });
     const csv = [header, ...csvRows].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -95,7 +154,7 @@ export default function TrackedStatesTable({ rates, tracked, onRemove }: Props) 
     a.download = "electricity-rates-comparison.csv";
     a.click();
     URL.revokeObjectURL(url);
-  }, [sorted]);
+  }, [sorted, layers]);
 
   const SortHeader = ({ label, k, className = "" }: { label: string; k: SortKey; className?: string }) => (
     <th
@@ -110,6 +169,8 @@ export default function TrackedStatesTable({ rates, tracked, onRemove }: Props) 
   );
 
   if (tracked.size === 0) return null;
+
+  const colTransition = "transition-all duration-300 ease-in-out";
 
   return (
     <div className="overflow-x-auto rounded-lg border border-zinc-800">
@@ -136,6 +197,12 @@ export default function TrackedStatesTable({ rates, tracked, onRemove }: Props) 
             <SortHeader label="Rate (¢/kWh)" k="rate" />
             <SortHeader label="vs US Avg" k="diff" />
             <SortHeader label="Trend" k="trend" />
+            {layers.solar && (
+              <SortHeader label="Solar (kWh/yr)" k="solar" className={colTransition} />
+            )}
+            {layers.index && (
+              <SortHeader label="Opportunity Index" k="opportunity" className={colTransition} />
+            )}
             <SortHeader label="Last Updated" k="period" />
             <th className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider text-zinc-500" />
           </tr>
@@ -174,6 +241,22 @@ export default function TrackedStatesTable({ rates, tracked, onRemove }: Props) 
               <td className="px-4 py-3">
                 <TrendIcon trend={r.trend} />
               </td>
+              {layers.solar && (
+                <td className={`px-4 py-3 ${colTransition}`}>
+                  <span className="font-mono text-sm font-semibold tabular-nums text-yellow-300">
+                    {r.solarKwh != null ? Math.round(r.solarKwh).toLocaleString() : "—"}
+                  </span>
+                </td>
+              )}
+              {layers.index && (
+                <td className={`px-4 py-3 ${colTransition}`}>
+                  {r.opportunity != null ? (
+                    <OpportunityBar score={r.opportunity} />
+                  ) : (
+                    <span className="font-mono text-sm text-zinc-600">—</span>
+                  )}
+                </td>
+              )}
               <td className="px-4 py-3 font-mono text-xs text-zinc-500">{r.period}</td>
               <td className="px-4 py-3">
                 <button

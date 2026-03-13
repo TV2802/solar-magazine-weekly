@@ -4,7 +4,7 @@ import { TrendingUp, TrendingDown, Minus, Activity, DollarSign, Zap, Clock } fro
 import { format } from "date-fns";
 import ElectricityRateMap from "@/components/ElectricityRateMap";
 import TrackedStatesTable from "@/components/TrackedStatesTable";
-import type { StateRate } from "@/components/ElectricityRateMap";
+import type { StateRate, Layers, LayerKey, SolarData } from "@/components/ElectricityRateMap";
 
 const DEFAULT_TRACKED = ["CA", "NY", "TX", "MA", "NJ", "CO"];
 
@@ -53,6 +53,10 @@ export default function MarketIntelligence() {
   const [ratesLoading, setRatesLoading] = useState(true);
   const [ratesError, setRatesError] = useState<string | null>(null);
   const [tracked, setTracked] = useState<Set<string>>(new Set(DEFAULT_TRACKED));
+  const [layers, setLayers] = useState<Layers>({ rates: true, solar: false, index: false });
+  const [solarData, setSolarData] = useState<SolarData[]>([]);
+  const [solarLoading, setSolarLoading] = useState(false);
+  const [solarFetched, setSolarFetched] = useState(false);
 
   const [metrics, setMetrics] = useState<MarketMetric[]>([]);
   const [metricsLoading, setMetricsLoading] = useState(true);
@@ -68,6 +72,24 @@ export default function MarketIntelligence() {
       return next;
     });
   }, []);
+
+  const handleToggleLayer = useCallback((key: LayerKey) => {
+    setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
+
+  // Fetch solar data when solar or index layer is toggled on
+  useEffect(() => {
+    if ((layers.solar || layers.index) && !solarFetched) {
+      setSolarLoading(true);
+      supabase.functions.invoke("pvwatts-states").then(({ data, error }) => {
+        if (!error && data?.data) {
+          setSolarData(data.data);
+        }
+        setSolarFetched(true);
+        setSolarLoading(false);
+      });
+    }
+  }, [layers.solar, layers.index, solarFetched]);
 
   useEffect(() => {
     async function fetchRates() {
@@ -144,6 +166,10 @@ export default function MarketIntelligence() {
               loading={ratesLoading}
               tracked={tracked}
               onToggleTracked={handleToggleTracked}
+              layers={layers}
+              onToggleLayer={handleToggleLayer}
+              solarData={solarData}
+              solarLoading={solarLoading}
             />
           </div>
           {ratesError && (
@@ -158,6 +184,8 @@ export default function MarketIntelligence() {
               rates={stateRates}
               tracked={tracked}
               onRemove={handleToggleTracked}
+              layers={layers}
+              solarData={solarData}
             />
           </section>
         )}
