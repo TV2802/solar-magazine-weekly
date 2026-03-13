@@ -184,6 +184,8 @@ export default function MarketIntelligence() {
               rates={stateRates}
               tracked={tracked}
               onRemove={handleToggleTracked}
+              layers={layers}
+              solarData={solarData}
             />
           </section>
         )}
