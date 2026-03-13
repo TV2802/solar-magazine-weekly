@@ -198,7 +198,7 @@ export default function TrackedStatesTable({ rates, tracked, onRemove, layers, s
             <SortHeader label="vs US Avg" k="diff" />
             <SortHeader label="Trend" k="trend" />
             {layers.solar && (
-              <SortHeader label="Solar (kWh/yr)" k="solar" className={colTransition} />
+              <SortHeader label="Avg Yield (kWh/yr)" k="solar" className={colTransition} />
             )}
             {layers.index && (
               <SortHeader label="Opportunity Index" k="opportunity" className={colTransition} />

@@ -455,7 +455,7 @@ export default function ElectricityRateMap({ rates, loading, tracked, onToggleTr
             )}
             {layers.solar && (
               <p className="font-mono text-xs text-zinc-300">
-                ☀️ Solar:{" "}
+                ☀️ Avg Yield:{" "}
                 <span className="font-bold text-yellow-300">
                   {tooltip.acAnnual != null ? `${Math.round(tooltip.acAnnual).toLocaleString()} kWh/yr` : "N/A"}
                 </span>
