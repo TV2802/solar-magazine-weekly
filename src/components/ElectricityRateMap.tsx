@@ -187,8 +187,8 @@ export default function ElectricityRateMap({ rates, loading, tracked, onToggleTr
   }, [rates]);
 
   const { minSolar, maxSolar } = useMemo(() => {
-    const vals = solarData.filter((s) => s.ac_annual != null).map((s) => s.ac_annual as number);
-    if (!vals.length) return { minSolar: 0, maxSolar: 20000 };
+    const vals = solarData.filter((s) => s.ac_annual != null).map((s) => (s.ac_annual as number) / 10);
+    if (!vals.length) return { minSolar: 0, maxSolar: 2000 };
     return { minSolar: Math.min(...vals), maxSolar: Math.max(...vals) };
   }, [solarData]);
 
