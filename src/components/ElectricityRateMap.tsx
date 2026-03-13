@@ -154,13 +154,13 @@ function TrendArrow({ trend }: { trend: string }) {
 
 const LAYER_PILLS: { key: LayerKey; label: string }[] = [
   { key: "rates", label: "⚡ Electricity Rates" },
-  { key: "solar", label: "☀️ Solar Production" },
+  { key: "solar", label: "☀️ Avg Yield" },
   { key: "index", label: "📊 Rate × Solar Index" },
 ];
 
 const SUBTITLES: Record<LayerKey, string> = {
   rates: "Brightness = rate intensity · Click any state to track/untrack",
-  solar: "Brightness = annual solar production (kWh) · Click any state to track/untrack",
+  solar: "Brightness = avg yield per 1 kW (kWh/yr) · Click any state to track/untrack",
   index: "Green = highest opportunity (high rate × high solar) · Click any state to track/untrack",
 };
 
