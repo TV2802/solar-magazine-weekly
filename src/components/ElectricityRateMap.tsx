@@ -361,12 +361,7 @@ export default function ElectricityRateMap({ rates, loading, tracked, onToggleTr
                     const strokeColor = isTracked ? "#f59e0b" : "#ffffff30";
                     const strokeW = isTracked ? 2 : 2;
 
-                    // Compute centroid for untracked hover "+" indicator
-                    const centroid = geoCentroid(geo);
-                    const offset = STATE_CENTROID_OFFSETS[abbr] || [0, 0];
-                    if (!isTracked) {
-                      stateCentroids[abbr] = [centroid[0] + offset[0], centroid[1] + offset[1]];
-                    }
+
 
                     return (
                       <Geography
