@@ -323,6 +323,14 @@ export default function ElectricityRateMap({ rates, loading, tracked, onToggleTr
           height={500}
           style={{ width: "100%", height: "auto" }}
         >
+          {/* Amber glow filter for tracked states */}
+          <defs>
+            <filter id="amber-glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#f59e0b" floodOpacity="0.6">
+                <animate attributeName="floodOpacity" values="0.3;0.7;0.3" dur="2s" repeatCount="indefinite" />
+              </feDropShadow>
+            </filter>
+          </defs>
           <Geographies geography={GEO_URL}>
             {({ geographies }) => {
               const stateCentroids: Record<string, [number, number]> = {};
