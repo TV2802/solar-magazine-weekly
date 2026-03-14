@@ -57,6 +57,7 @@ export type Database = {
           relevance_score: number | null
           source_name: string | null
           source_url: string
+          states: string[] | null
           summary: string | null
           title: string
           topic: Database["public"]["Enums"]["topic_category"]
@@ -71,6 +72,7 @@ export type Database = {
           relevance_score?: number | null
           source_name?: string | null
           source_url: string
+          states?: string[] | null
           summary?: string | null
           title: string
           topic: Database["public"]["Enums"]["topic_category"]
@@ -85,6 +87,7 @@ export type Database = {
           relevance_score?: number | null
           source_name?: string | null
           source_url?: string
+          states?: string[] | null
           summary?: string | null
           title?: string
           topic?: Database["public"]["Enums"]["topic_category"]
@@ -268,6 +271,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      state_keywords: {
+        Row: {
+          article_count: number
+          created_at: string
+          id: string
+          is_locked: boolean
+          keyword: string
+          source: string
+          state: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          article_count?: number
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          keyword: string
+          source?: string
+          state: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          article_count?: number
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          keyword?: string
+          source?: string
+          state?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: []
       }
     }
     Views: {
