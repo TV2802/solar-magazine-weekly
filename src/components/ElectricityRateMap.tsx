@@ -442,30 +442,81 @@ export default function ElectricityRateMap({ rates, loading, tracked, onToggleTr
                     </Marker>
                   ))}
 
-                  {/* Tracked state labels */}
+                  {/* Tracked state pill labels with × button */}
                   {Array.from(tracked).map((abbr) => {
                     const coords = stateCentroids[abbr];
                     if (!coords || (coords[0] === 0 && coords[1] === 0)) return null;
                     return (
                       <Marker key={`state-${abbr}`} coordinates={coords}>
-                        <text
-                          textAnchor="middle"
-                          dominantBaseline="central"
-                          style={{
-                            fontFamily: "ui-monospace, monospace",
-                            fontSize: 7,
-                            fontWeight: 700,
-                            fill: "#F59E0B",
-                            pointerEvents: "none",
-                            userSelect: "none",
-                            textShadow: "0 1px 2px rgba(0,0,0,0.9)",
-                          }}
-                        >
-                          {abbr}
-                        </text>
+                        <g style={{ cursor: "default" }}>
+                          <rect
+                            x={-16} y={-7} width={32} height={14} rx={7}
+                            fill="rgba(0,0,0,0.75)" stroke="#f59e0b" strokeWidth={1}
+                          />
+                          <text
+                            x={-4} y={0.5}
+                            textAnchor="middle"
+                            dominantBaseline="central"
+                            style={{
+                              fontFamily: "ui-monospace, monospace",
+                              fontSize: 7,
+                              fontWeight: 700,
+                              fill: "#F59E0B",
+                              pointerEvents: "none",
+                              userSelect: "none",
+                            }}
+                          >
+                            {abbr}
+                          </text>
+                          {/* × close button */}
+                          <g
+                            style={{ cursor: "pointer" }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onToggleTracked(abbr);
+                            }}
+                          >
+                            <circle cx={11} cy={0} r={5} fill="transparent" />
+                            <text
+                              x={11} y={0.5}
+                              textAnchor="middle"
+                              dominantBaseline="central"
+                              style={{
+                                fontFamily: "ui-monospace, monospace",
+                                fontSize: 7,
+                                fontWeight: 400,
+                                fill: "#a1a1aa",
+                                userSelect: "none",
+                              }}
+                            >
+                              ×
+                            </text>
+                          </g>
+                        </g>
                       </Marker>
                     );
                   })}
+
+                  {/* Hover "+" indicator for untracked states */}
+                  {hoveredState && !tracked.has(hoveredState) && stateCentroids[hoveredState] && (
+                    <Marker coordinates={stateCentroids[hoveredState]}>
+                      <text
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        style={{
+                          fontFamily: "ui-monospace, monospace",
+                          fontSize: 14,
+                          fontWeight: 700,
+                          fill: "#f59e0b88",
+                          pointerEvents: "none",
+                          userSelect: "none",
+                          textShadow: "0 1px 4px rgba(0,0,0,0.9)",
+                        }}
+                      >
+                        +
+                      </text>
+                    </Marker>
+                  )}
                 </>
               );
             }}
