@@ -191,7 +191,14 @@ export default function CAHub() {
     fetchArticles();
   }, [tab, articleTopic]);
 
-  const topics = ["all", "Solar", "Energy Storage", "Policy & Regulation", "Finance & Incentives", "Grid & Utilities"];
+  const topicDisplayToEnum: Record<string, string> = {
+    "Solar": "solar",
+    "Energy Storage": "bess_storage",
+    "Policy & Regulation": "policy_incentives",
+    "Finance & Incentives": "market_pricing",
+    "Grid & Utilities": "technology_equipment",
+  };
+  const topics = ["all", ...Object.keys(topicDisplayToEnum)];
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
