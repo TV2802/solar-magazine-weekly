@@ -168,6 +168,7 @@ const SUBTITLES: Record<LayerKey, string> = {
 export default function ElectricityRateMap({ rates, loading, tracked, onToggleTracked, onStateClick, layers, onToggleLayer, solarData, solarLoading }: Props) {
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const [popup, setPopup] = useState<{ abbr: string; x: number; y: number; price: number | null } | null>(null);
+  const [hoveredState, setHoveredState] = useState<string | null>(null);
   const activeColorMode: LayerKey = layers.index ? "index" : layers.solar ? "solar" : "rates";
 
   const rateMap = useMemo(() => {
