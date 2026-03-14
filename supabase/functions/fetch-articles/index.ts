@@ -302,21 +302,33 @@ Deno.serve(async () => {
 
     const existingUrls = new Set((recentArticles || []).map((a: any) => a.source_url));
 
+    // Also load recent titles for same-issue title dedup
+    const { data: issueTitles } = await supabase
+      .from("articles")
+      .select("title")
+      .eq("issue_id", issue.id);
+    const existingTitles = new Set((issueTitles || []).map((a: any) => a.title.toLowerCase().trim()));
+
     // ── 4. Fetch all feeds ────────────────────────────────────
     const allArticles = [];
 
-    for (const source of CONFIG.SOURCES) {
-      try {
-        const articles = await fetchFeed(source.url, source.name);
-        allArticles.push(...articles);
-        fetched += articles.length;
-      } catch (err: any) {
-        errors.push(`${source.name}: ${err.message}`);
+    const feedResults = await Promise.allSettled(
+      CONFIG.SOURCES.map(source => fetchFeed(source.url, source.name))
+    );
+
+    for (let i = 0; i < feedResults.length; i++) {
+      const result = feedResults[i];
+      if (result.status === "fulfilled") {
+        allArticles.push(...result.value);
+        fetched += result.value.length;
+      } else {
+        errors.push(`Error fetching ${CONFIG.SOURCES[i].url}: ${result.reason}`);
       }
     }
 
-    // ── 5. Filter, score, detect states ──────────────────────
+    // ── 5. Filter, score, detect states, dedup by title ──────
     const toInsert = [];
+    const seenTitles = new Set(existingTitles);
 
     for (const article of allArticles) {
       // Skip duplicates
