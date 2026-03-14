@@ -512,6 +512,30 @@ export default function ElectricityRateMap({ rates, loading, tracked, onToggleTr
         </div>
       )}
 
+      {/* First-click popup */}
+      {popup && (
+        <div
+          className="fixed z-50 animate-scale-in rounded-lg border border-amber-500/30 bg-zinc-900/95 px-3 py-2 shadow-xl backdrop-blur-sm"
+          style={{ left: popup.x + 14, top: popup.y - 60 }}
+        >
+          <p className="font-mono text-xs text-zinc-300">
+            ⚡ {ABBR_TO_NAME[popup.abbr] || popup.abbr}:{" "}
+            <span className="font-bold text-amber-400">
+              {popup.price != null ? `${popup.price.toFixed(2)} ¢/kWh` : "N/A"}
+            </span>
+          </p>
+          <button
+            className="mt-1.5 w-full rounded border border-amber-500/40 bg-amber-500/10 px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-wider text-amber-400 transition-colors hover:bg-amber-500/20"
+            onClick={() => {
+              setPopup(null);
+              onStateClick(popup.abbr);
+            }}
+          >
+            View Guide →
+          </button>
+        </div>
+      )}
+
       {/* Legend — matches active color mode */}
       {activeColorMode === "rates" && (
         <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
