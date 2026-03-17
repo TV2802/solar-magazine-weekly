@@ -30,7 +30,7 @@ export function HeroBanner({ issue, allIssues = [], onIssueChange }: HeroBannerP
         <div className="mb-6 flex items-center gap-3">
           <Zap className="h-8 w-8 text-primary md:h-10 md:w-10" />
           <span className="font-display text-4xl font-black tracking-tight text-foreground md:text-6xl">
-            ENERGYPULSE
+            PULSE
           </span>
         </div>
 

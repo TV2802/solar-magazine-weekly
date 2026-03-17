@@ -14,7 +14,7 @@ export function SiteNav({ onOpenSaved }: SiteNavProps) {
       <div className="container mx-auto flex h-14 items-center justify-between px-4">
         <Link to="/" className="flex items-center gap-2">
           <Zap className="h-4 w-4 text-primary" />
-          <span className="font-display text-base font-bold tracking-tight">ENERGYPULSE</span>
+          <span className="font-display text-base font-bold tracking-tight">PULSE</span>
         </Link>
         <div className="flex items-center gap-5">
           <Link

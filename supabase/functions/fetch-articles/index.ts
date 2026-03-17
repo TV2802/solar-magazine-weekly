@@ -179,7 +179,7 @@ function stripHtml(raw: string): string {
 
 async function fetchFeed(url: string, sourceName: string) {
   const res = await fetch(url, {
-    headers: { "User-Agent": "EnergyPulse/1.0 RSS Reader" },
+    headers: { "User-Agent": "Pulse/1.0 RSS Reader" },
     signal: AbortSignal.timeout(10000),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status} from ${url}`);

@@ -9,7 +9,7 @@ export function SiteFooter() {
           <div>
             <div className="mb-2 flex items-center gap-2">
               <Zap className="h-5 w-5 text-primary" />
-              <span className="font-display text-lg font-bold tracking-tight">ENERGYPULSE</span>
+              <span className="font-display text-lg font-bold tracking-tight">PULSE</span>
             </div>
             <p className="max-w-sm text-sm text-muted-foreground">
               Internal weekly briefing for DER developers, owners, and operators
@@ -33,7 +33,7 @@ export function SiteFooter() {
           </div>
         </div>
         <div className="mt-8 border-t border-border pt-6 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} ENERGYPULSE. Powered by Lovable.
+          © {new Date().getFullYear()} PULSE. Powered by Lovable.
         </div>
       </div>
     </footer>
