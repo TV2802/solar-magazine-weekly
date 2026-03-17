@@ -6,8 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import Index from "./pages/Index";
-import Archive from "./pages/Archive";
-import Saved from "./pages/Saved";
 import MarketIntelligence from "./pages/MarketIntelligence";
 import CAHub from "./pages/market/CA";
 import NotFound from "./pages/NotFound";
@@ -25,8 +23,6 @@ const App = () => (
           <div className="flex-1">
             <Routes>
               <Route path="/"          element={<Index />} />
-              <Route path="/archive"   element={<Archive />} />
-              <Route path="/saved"     element={<Saved />} />
               <Route path="/market"    element={<MarketIntelligence />} />
               <Route path="/market/CA" element={<CAHub />} />
               <Route path="*"          element={<NotFound />} />
