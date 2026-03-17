@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { HeroBanner } from "@/components/HeroBanner";
 import { ArticleCard } from "@/components/ArticleCard";
 import { ArticleDrawer } from "@/components/ArticleDrawer";
 import { SectionNav } from "@/components/SectionNav";
-import { useAllArticles } from "@/hooks/useArticles";
+import { useLatestIssue, useIssueArticles, useIssue, useAllIssues } from "@/hooks/useArticles";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Zap } from "lucide-react";
 import type { Article } from "@/hooks/useArticles";
@@ -13,8 +14,17 @@ type TopicCategory = Database["public"]["Enums"]["topic_category"];
 const Index = () => {
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [activeFilter, setActiveFilter] = useState<TopicCategory | null>(null);
+  const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
 
-  const { data: articles, isLoading } = useAllArticles();
+  const { data: latestIssue, isLoading: latestLoading } = useLatestIssue();
+  const { data: allIssues } = useAllIssues();
+  const { data: manualIssue } = useIssue(selectedIssueId ?? undefined);
+
+  const issue = selectedIssueId ? manualIssue : latestIssue;
+  const issueLoading = latestLoading;
+
+  const { data: articles, isLoading: articlesLoading } = useIssueArticles(issue?.id);
+  const isLoading = issueLoading || articlesLoading;
 
   const sortedArticles = [...(articles ?? [])]
     .filter((a) => a.topic !== "weekly_digest")
@@ -26,6 +36,11 @@ const Index = () => {
 
   return (
     <>
+      <HeroBanner
+        issue={issue ?? null}
+        allIssues={allIssues ?? []}
+        onIssueChange={setSelectedIssueId}
+      />
       <SectionNav activeFilter={activeFilter} onFilterChange={setActiveFilter} />
 
       <main className="container mx-auto px-4 py-10">
@@ -46,7 +61,7 @@ const Index = () => {
           </div>
         ) : filteredArticles.length === 0 ? (
           <p className="py-16 text-center text-muted-foreground">
-            No articles in this section.
+            No articles in this section for the current issue.
           </p>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
