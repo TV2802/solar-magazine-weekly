@@ -1,48 +1,24 @@
 // ============================================================
-// fetch-articles — v4
+// fetch-articles — v5
 // Date: March 2026
 //
-// CHANGELOG v4:
-//   - Added state detection using state_keywords table
-//   - Keywords loaded once per invocation (not per article)
-//   - Articles tagged with states[] array
-//   - All config at top of file for easy editing
-//
-// TO ADD A NEW STATE:
-//   1. Add seed keywords to state_keywords table via SQL
-//   2. Add state abbr to TRACKED_STATES array below
-//   That's it — detection is automatic from the DB
-//
-// TO ADJUST DETECTION SENSITIVITY:
-//   - Raise STATE_CONFIDENCE_THRESHOLD to require stronger signal
-//   - Lower it to tag more articles (more false positives)
+// CHANGELOG v5:
+//   - Replaced single `topic` field with `tags` text[] array
+//   - Tags assigned via keyword matching (Solar, BESS, Policy, etc.)
+//   - State tags (California, New York, etc.) also added to tags
+//   - Topic field still set for backward compat but tags is primary
 // ============================================================
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { DOMParser } from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
 
-// ─────────────────────────────────────────
-// CONFIG — edit this section freely
-// ─────────────────────────────────────────
 const CONFIG = {
-  // States we track. Add new state abbr here when expanding.
   TRACKED_STATES: ["CA", "NY", "TX", "MA", "NJ", "CO"],
-
-  // Minimum weighted score for a state to be tagged on an article.
-  // 0.60 = at least one strong keyword OR two moderate ones.
-  // Raise to 0.75 to be more conservative.
   STATE_CONFIDENCE_THRESHOLD: 0.60,
-
-  // Maximum articles to keep per issue
   MAX_ARTICLES: 80,
-
-  // Minimum relevance score to publish an article
   MIN_RELEVANCE_SCORE: 30,
-
-  // How many days back to check for duplicates
   DEDUP_WINDOW_DAYS: 14,
 
-  // Sources — add/remove feeds here
   SOURCES: [
     { url: "https://www.pv-magazine-usa.com/feed/",          name: "PV Magazine USA" },
     { url: "https://www.solarpowerworldonline.com/feed/",    name: "Solar Power World" },
@@ -51,7 +27,6 @@ const CONFIG = {
     { url: "https://www.utilitydive.com/feeds/news/",        name: "Utility Dive" },
   ],
 
-  // Must contain at least one of these to pass relevance gate
   RELEVANCE_REQUIRED: [
     "solar","storage","battery","bess","der","distributed",
     "rooftop","multifamily","residential","behind-the-meter",
@@ -59,7 +34,6 @@ const CONFIG = {
     "photovoltaic","pv system","clean energy","renewable",
   ],
 
-  // Reject if title contains any of these
   BLOCKLIST_TITLE: [
     "electric vehicle","electric car","ev charging","ev battery",
     " ev ","tesla model","rivian","lucid motors","ford f-150",
@@ -67,26 +41,46 @@ const CONFIG = {
     "wind turbine offshore","offshore wind farm",
   ],
 
-  // Reject if article mentions a non-US geography in title/summary
   GEO_BLOCKLIST: [
     "australia","canada","united kingdom"," uk ","germany","china",
     "india","brazil","europe","romania","france","japan","south korea",
     "mexico","netherlands","spain","italy","poland","denmark","sweden",
   ],
 
-  // +20 score boost for multifamily/DG-specific keywords
   BOOST_KEYWORDS: [
     "multifamily","rooftop","behind-the-meter","vpp","sgip",
     "nem","net metering","interconnection","distributed generation",
     "community solar","virtual net metering","low-income solar",
     "affordable housing solar","bess","residential solar","c&i solar",
   ],
+
+  // Tag detection rules: keyword -> tag name
+  TAG_RULES: [
+    { keywords: ["solar","photovoltaic","pv system","pv module","rooftop solar","community solar","residential solar","c&i solar"], tag: "Solar" },
+    { keywords: ["bess","battery","energy storage","storage system","lithium"], tag: "BESS" },
+    { keywords: ["policy","regulation","mandate","legislature","bill","law","ruling"], tag: "Policy" },
+    { keywords: ["incentive","rebate","tax credit","credit program","grant","subsidy"], tag: "Incentives" },
+    { keywords: ["interconnection","queue","grid connection","utility connection"], tag: "Interconnection" },
+    { keywords: ["nem","net metering","net energy metering","virtual net metering"], tag: "NEM" },
+    { keywords: ["sgip","self-generation"], tag: "SGIP" },
+    { keywords: ["itc","investment tax credit","production tax credit","ptc","45x","48e"], tag: "ITC" },
+    { keywords: ["multifamily","apartment","affordable housing","low-income","tenant"], tag: "Multifamily" },
+    { keywords: ["vpp","virtual power plant","demand response","flexibility"], tag: "VPP" },
+    { keywords: ["utility","utilities","sce","pg&e","pge","sdge","conedison","duke energy","dominion","xcel"], tag: "Utilities" },
+    { keywords: ["financing","finance","loan","ppa","lease","tax equity","capital"], tag: "Financing" },
+    { keywords: ["grid","transmission","distribution","microgrid","islanding"], tag: "Grid" },
+    { keywords: ["federal","doe","department of energy","ferc","epa","ira","inflation reduction act","white house","congress"], tag: "Federal" },
+    { keywords: ["inverter","module","panel","racking","tracker","optimizer"], tag: "Equipment" },
+    { keywords: ["cpuc","california","cal "], tag: "California" },
+    { keywords: ["new york","nyserda","ny-sun","conedison"], tag: "New York" },
+    { keywords: ["texas","ercot"], tag: "Texas" },
+    { keywords: ["massachusetts","masssave","mass cec"], tag: "Massachusetts" },
+    { keywords: ["colorado","xcel energy","colo "], tag: "Colorado" },
+    { keywords: ["new jersey","njbpu","trec","srec"], tag: "New Jersey" },
+  ] as { keywords: string[]; tag: string }[],
 };
 
-// ─────────────────────────────────────────
-// STATE DETECTION
-// Loaded from DB once, used for all articles
-// ─────────────────────────────────────────
+// State keyword detection (from DB)
 interface StateKeyword {
   keyword: string;
   state: string;
@@ -100,69 +94,71 @@ function detectStates(
   threshold: number
 ): string[] {
   const text = `${title} ${summary}`.toLowerCase();
-
-  // Accumulate weighted score per state
   const scores: Record<string, number> = {};
-
   for (const kw of keywords) {
     if (text.includes(kw.keyword.toLowerCase())) {
       scores[kw.state] = (scores[kw.state] || 0) + kw.weight;
     }
   }
-
-  // Return states that cross the confidence threshold
   return Object.entries(scores)
     .filter(([_, score]) => score >= threshold)
     .map(([state]) => state);
 }
 
-// ─────────────────────────────────────────
-// RELEVANCE SCORING
-// ─────────────────────────────────────────
+// Tag detection from text
+function detectTags(title: string, summary: string): string[] {
+  const text = `${title} ${summary}`.toLowerCase();
+  const tags: string[] = [];
+  for (const rule of CONFIG.TAG_RULES) {
+    if (rule.keywords.some(kw => text.includes(kw))) {
+      tags.push(rule.tag);
+    }
+  }
+  return [...new Set(tags)];
+}
+
+// Derive a single topic for backward compat
+function deriveTopic(tags: string[]): string {
+  const tagSet = new Set(tags);
+  if (tagSet.has("BESS")) return "bess_storage";
+  if (tagSet.has("Policy") || tagSet.has("Federal")) return "policy_incentives";
+  if (tagSet.has("Multifamily")) return "multifamily_nexus";
+  if (tagSet.has("Incentives") || tagSet.has("ITC") || tagSet.has("SGIP")) return "policy_incentives";
+  if (tagSet.has("Interconnection") || tagSet.has("Grid")) return "technology_equipment";
+  if (tagSet.has("NEM") || tagSet.has("Utilities")) return "market_pricing";
+  if (tagSet.has("Financing")) return "market_pricing";
+  if (tagSet.has("Equipment")) return "technology_equipment";
+  if (tagSet.has("VPP")) return "innovation_spotlight";
+  if (tagSet.has("Solar")) return "project_wins";
+  return "project_wins";
+}
+
 function scoreArticle(title: string, summary: string): number {
   const text = `${title} ${summary}`.toLowerCase();
-  let score = 50; // base score
-
-  // Boost for DG-specific keywords
+  let score = 50;
   for (const kw of CONFIG.BOOST_KEYWORDS) {
     if (text.includes(kw)) score += 20;
   }
-
-  // Penalize vague/generic content
   if (text.includes("opinion:")) score -= 10;
   if (text.includes("podcast")) score -= 15;
   if (text.includes("webinar")) score -= 10;
-
   return Math.min(score, 100);
 }
 
 function isRelevant(title: string, summary: string): boolean {
   const text = `${title} ${summary}`.toLowerCase();
-
-  // Must contain at least one relevance keyword
   const hasRelevance = CONFIG.RELEVANCE_REQUIRED.some(kw => text.includes(kw));
   if (!hasRelevance) return false;
-
-  // Reject blocklisted title keywords
   const titleLower = title.toLowerCase();
   if (CONFIG.BLOCKLIST_TITLE.some(kw => titleLower.includes(kw))) return false;
-
-  // Reject non-US geography
   if (CONFIG.GEO_BLOCKLIST.some(kw => text.includes(kw))) return false;
-
   return true;
 }
 
-// ─────────────────────────────────────────
-// HTML STRIPPING — robust multi-pass
-// ─────────────────────────────────────────
 function stripHtml(raw: string): string {
   return raw
-    // Remove CDATA wrappers
     .replace(/<!\[CDATA\[|\]\]>/g, "")
-    // Remove all HTML tags (including self-closing, multi-line)
     .replace(/<[^>]*>/gs, "")
-    // Decode common HTML entities
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
@@ -175,17 +171,12 @@ function stripHtml(raw: string): string {
     .replace(/&#8221;/g, '"')
     .replace(/&#8211;/g, "–")
     .replace(/&#8212;/g, "—")
-    // Catch remaining numeric/named entities
     .replace(/&#\d+;/g, " ")
     .replace(/&[a-zA-Z]+;/g, " ")
-    // Collapse whitespace
     .replace(/\s+/g, " ")
     .trim();
 }
 
-// ─────────────────────────────────────────
-// RSS PARSING
-// ─────────────────────────────────────────
 async function fetchFeed(url: string, sourceName: string) {
   const res = await fetch(url, {
     headers: { "User-Agent": "EnergyPulse/1.0 RSS Reader" },
@@ -238,25 +229,19 @@ Deno.serve(async () => {
   const errors: string[] = [];
 
   try {
-    // ── 1. Load state keywords from DB once ──────────────────
-    // This is loaded ONCE per function run, not per article.
-    // All 79 keywords loaded in a single query.
+    // 1. Load state keywords
     const { data: stateKeywords, error: kwError } = await supabase
       .from("state_keywords")
       .select("keyword, state, weight")
       .order("weight", { ascending: false });
 
-    if (kwError) {
-      errors.push(`state_keywords load failed: ${kwError.message}`);
-    }
-
+    if (kwError) errors.push(`state_keywords load failed: ${kwError.message}`);
     const keywords: StateKeyword[] = stateKeywords || [];
 
-    // ── 2. Get or create current issue ───────────────────────
+    // 2. Get or create current issue
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - weekStart.getDay());
     weekStart.setHours(0, 0, 0, 0);
-
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekEnd.getDate() + 6);
 
@@ -275,7 +260,6 @@ Deno.serve(async () => {
         .single();
 
       const nextNumber = (lastIssue?.issue_number || 0) + 1;
-
       const { data: newIssue } = await supabase
         .from("issues")
         .insert({
@@ -285,13 +269,12 @@ Deno.serve(async () => {
         })
         .select("id, issue_number")
         .single();
-
       issue = newIssue;
     }
 
     if (!issue) throw new Error("Could not create or find issue");
 
-    // ── 3. Load recent URLs for deduplication ─────────────────
+    // 3. Load recent URLs + titles for dedup
     const dedupCutoff = new Date();
     dedupCutoff.setDate(dedupCutoff.getDate() - CONFIG.DEDUP_WINDOW_DAYS);
 
@@ -299,19 +282,16 @@ Deno.serve(async () => {
       .from("articles")
       .select("source_url")
       .gte("created_at", dedupCutoff.toISOString());
-
     const existingUrls = new Set((recentArticles || []).map((a: any) => a.source_url));
 
-    // Also load recent titles for same-issue title dedup
     const { data: issueTitles } = await supabase
       .from("articles")
       .select("title")
       .eq("issue_id", issue.id);
     const existingTitles = new Set((issueTitles || []).map((a: any) => a.title.toLowerCase().trim()));
 
-    // ── 4. Fetch all feeds ────────────────────────────────────
-    const allArticles = [];
-
+    // 4. Fetch all feeds
+    const allArticles: any[] = [];
     const feedResults = await Promise.allSettled(
       CONFIG.SOURCES.map(source => fetchFeed(source.url, source.name))
     );
@@ -326,56 +306,31 @@ Deno.serve(async () => {
       }
     }
 
-    // ── 5. Filter, score, detect states, dedup by title ──────
+    // 5. Filter, score, tag, dedup
     const toInsert = [];
     const seenTitles = new Set(existingTitles);
 
     for (const article of allArticles) {
-      // Skip URL duplicates
       if (existingUrls.has(article.source_url)) continue;
 
-      // Skip title duplicates within same issue
       const titleKey = article.title.toLowerCase().trim();
-      if (seenTitles.has(titleKey)) {
-        rejected++;
-        continue;
-      }
+      if (seenTitles.has(titleKey)) { rejected++; continue; }
 
-      // Relevance gate
-      if (!isRelevant(article.title, article.summary)) {
-        rejected++;
-        continue;
-      }
+      if (!isRelevant(article.title, article.summary)) { rejected++; continue; }
 
-      // Score
       const relevance_score = scoreArticle(article.title, article.summary);
-      if (relevance_score < CONFIG.MIN_RELEVANCE_SCORE) {
-        rejected++;
-        continue;
-      }
+      if (relevance_score < CONFIG.MIN_RELEVANCE_SCORE) { rejected++; continue; }
 
-      // Detect states
+      // Detect states (DB keywords)
       const states = keywords.length > 0
-        ? detectStates(
-            article.title,
-            article.summary,
-            keywords,
-            CONFIG.STATE_CONFIDENCE_THRESHOLD
-          )
+        ? detectStates(article.title, article.summary, keywords, CONFIG.STATE_CONFIDENCE_THRESHOLD)
         : [];
 
-      // Derive topic — must match topic_category enum values
-      const text = `${article.title} ${article.summary}`.toLowerCase();
-      let topic: string = "solar";
-      if (text.includes("storage") || text.includes("bess") || text.includes("battery")) topic = "bess_storage";
-      else if (text.includes("policy") || text.includes("regulation") || text.includes("cpuc") || text.includes("ferc") || text.includes("incentive") || text.includes("rebate")) topic = "policy_incentives";
-      else if (text.includes("multifamily") || text.includes("affordable housing") || text.includes("low-income")) topic = "multifamily_nexus";
-      else if (text.includes("code") || text.includes("compliance") || text.includes("building standard")) topic = "code_compliance";
-      else if (text.includes("pricing") || text.includes("rate") || text.includes("tariff") || text.includes("lcoe")) topic = "market_pricing";
-      else if (text.includes("project") || text.includes("install") || text.includes("deploy") || text.includes("commission")) topic = "project_wins";
-      else if (text.includes("equipment") || text.includes("inverter") || text.includes("module") || text.includes("panel")) topic = "technology_equipment";
-      else if (text.includes("innovation") || text.includes("breakthrough") || text.includes("startup")) topic = "innovation_spotlight";
-      else if (text.includes("solar")) topic = "solar";
+      // Detect tags (keyword rules)
+      const tags = detectTags(article.title, article.summary);
+
+      // Derive backward-compat topic from tags
+      const topic = deriveTopic(tags);
 
       toInsert.push({
         issue_id: issue.id,
@@ -385,6 +340,7 @@ Deno.serve(async () => {
         source_name: article.source_name,
         image_url: article.image_url,
         topic,
+        tags,
         published_at: article.published_at,
         relevance_score,
         states,
@@ -395,23 +351,19 @@ Deno.serve(async () => {
       seenTitles.add(titleKey);
     }
 
-    // Sort by relevance, cap at MAX_ARTICLES
     toInsert.sort((a, b) => b.relevance_score - a.relevance_score);
     const finalArticles = toInsert.slice(0, CONFIG.MAX_ARTICLES);
 
-    // ── 6. Insert articles ────────────────────────────────────
+    // 6. Insert articles
     if (finalArticles.length > 0) {
       const { error: insertError } = await supabase
         .from("articles")
         .upsert(finalArticles, { onConflict: "source_url" });
-
       if (insertError) throw insertError;
       published = finalArticles.length;
     }
 
-    // ── 7. Update keyword article_count ──────────────────────
-    // Increment count for every keyword that matched at least one article.
-    // The learn function uses this to avoid over-fitting low-volume keywords.
+    // 7. Update keyword article_count
     const matchedKeywords = new Set<string>();
     for (const article of finalArticles) {
       const text = `${article.title} ${article.summary}`.toLowerCase();
@@ -431,7 +383,7 @@ Deno.serve(async () => {
         .eq("state", state);
     }
 
-    // ── 8. Log the run ────────────────────────────────────────
+    // 8. Log
     await supabase.from("fetch_logs").insert({
       run_at: runAt,
       articles_fetched: fetched,
@@ -441,25 +393,19 @@ Deno.serve(async () => {
       errors: errors.length > 0 ? errors : null,
     });
 
-    // ── 9. Trigger digest generation ─────────────────────────
+    // 9. Trigger digest
     if (published > 0) {
       supabase.functions.invoke("generate-digest", {
         body: { issue_id: issue.id },
       }).catch(() => {});
     }
 
-    // Build per-state tag counts
-    const stateCounts: Record<string, number> = {};
+    // Build tag counts
+    const tagCounts: Record<string, number> = {};
     for (const a of finalArticles) {
-      for (const s of a.states) {
-        stateCounts[s] = (stateCounts[s] || 0) + 1;
+      for (const t of a.tags) {
+        tagCounts[t] = (tagCounts[t] || 0) + 1;
       }
-    }
-
-    // Build per-topic counts
-    const topicCounts: Record<string, number> = {};
-    for (const a of finalArticles) {
-      topicCounts[a.topic] = (topicCounts[a.topic] || 0) + 1;
     }
 
     return new Response(
@@ -469,9 +415,7 @@ Deno.serve(async () => {
         fetched,
         published,
         rejected,
-        states_detected: finalArticles.filter(a => a.states.length > 0).length,
-        state_counts: stateCounts,
-        sections: topicCounts,
+        tag_counts: tagCounts,
         errors,
       }),
       { headers: { "Content-Type": "application/json" } }
