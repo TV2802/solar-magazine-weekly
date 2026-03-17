@@ -1,11 +1,10 @@
-import { TopicBadge } from "./TopicBadge";
 import { FeedbackButtons } from "./FeedbackButtons";
 import { Button } from "./ui/button";
 import { X, ExternalLink, Clock } from "lucide-react";
 import { format } from "date-fns";
 import type { Article } from "@/hooks/useArticles";
-import { TOPIC_CONFIG } from "@/lib/topics";
 import { stripHtml } from "@/lib/utils";
+import { getTagToken } from "@/lib/tags";
 
 interface ArticleDrawerProps {
   article: Article | null;
@@ -20,32 +19,11 @@ function estimateReadTime(text: string | null): string {
   return `${mins} min read`;
 }
 
-function getEnergyToken(topic: string): string {
-  const map: Record<string, string> = {
-    policy_incentives: "policy",
-    technology_equipment: "technology",
-    multifamily_nexus: "multifamily",
-    market_pricing: "market",
-    code_compliance: "compliance",
-    bess_storage: "bess",
-    innovation_spotlight: "innovation",
-    project_wins: "wins",
-    weekly_digest: "digest",
-    solar: "policy",
-    multifamily: "multifamily",
-    battery: "bess",
-    built_environment: "compliance",
-    new_innovations: "innovation",
-    company_success: "wins",
-  };
-  return map[topic] ?? "policy";
-}
-
 export function ArticleDrawer({ article, open, onClose }: ArticleDrawerProps) {
   if (!article) return null;
 
-  const config = TOPIC_CONFIG[article.topic];
-  const token = getEnergyToken(article.topic);
+  const articleTags: string[] = (article as any).tags ?? [];
+  const primaryToken = articleTags.length > 0 ? getTagToken(articleTags[0]) : "policy";
   const dateStr = article.published_at
     ? format(new Date(article.published_at), "MMMM d, yyyy")
     : "";
@@ -70,13 +48,11 @@ export function ArticleDrawer({ article, open, onClose }: ArticleDrawerProps) {
         role="dialog"
         aria-modal="true"
       >
-        {/* Colored top accent */}
         <div
           className="absolute left-0 top-0 h-[3px] w-full"
-          style={{ backgroundColor: `hsl(var(--energy-${token}))` }}
+          style={{ backgroundColor: `hsl(var(--energy-${primaryToken}))` }}
         />
 
-        {/* Close button */}
         <button
           onClick={onClose}
           className="absolute right-4 top-4 rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -86,13 +62,26 @@ export function ArticleDrawer({ article, open, onClose }: ArticleDrawerProps) {
         </button>
 
         <div className="flex h-full flex-col overflow-y-auto p-6 pt-14">
-          {/* Section tag */}
-          <span
-            className="mb-4 inline-block font-mono text-[11px] font-medium uppercase tracking-[0.2em]"
-            style={{ color: `hsl(var(--energy-${token}))` }}
-          >
-            {config.emoji} {config.label}
-          </span>
+          {/* Tags */}
+          {articleTags.length > 0 && (
+            <div className="mb-4 flex flex-wrap gap-1.5">
+              {articleTags.map((tag) => {
+                const token = getTagToken(tag);
+                return (
+                  <span
+                    key={tag}
+                    className="rounded-full px-2.5 py-0.5 font-mono text-[10px] font-medium tracking-wider"
+                    style={{
+                      backgroundColor: `hsl(var(--energy-${token}) / 0.15)`,
+                      color: `hsl(var(--energy-${token}))`,
+                    }}
+                  >
+                    {tag}
+                  </span>
+                );
+              })}
+            </div>
+          )}
 
           {/* Meta line */}
           <div className="mb-4 flex items-center gap-3 font-mono text-[11px] text-muted-foreground">
